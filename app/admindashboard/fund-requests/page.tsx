@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { apiFetch, getAdminFundRequestDetail, getAdminFundRequests, getAdminPaymentProofBlob } from "@/lib/api";
 import type { AdminFundRequestDetail, AuditLogRow, FundRequestRow, PaginatedMeta } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
@@ -35,12 +35,19 @@ export default function AdminFundRequestsPage() {
   const [proofOpenId, setProofOpenId] = useState<string | null>(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string>("");
   const [proofLoading, setProofLoading] = useState(false);
+  const [status, setStatus] = useState<"" | "pending" | "approved" | "rejected">("");
+  const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [rejectRow, setRejectRow] = useState<FundRequestRow | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await getAdminFundRequests(page, PAGE_SIZE);
+      const response = await getAdminFundRequests(page, PAGE_SIZE, { status, q, from, to });
       setRows(response.data || []);
       setMeta(response.meta || null);
     } catch (err: unknown) {
@@ -49,7 +56,7 @@ export default function AdminFundRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [from, page, q, status, to]);
 
   useEffect(() => {
     load();
@@ -119,10 +126,10 @@ export default function AdminFundRequestsPage() {
     }
   };
 
-  const reject = async (id: string) => {
+  const reject = async (id: string, reason: string) => {
     await apiFetch(`/api/fund-requests/admin/${id}/review`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "rejected", reason: "Rejected by admin" }),
+      body: JSON.stringify({ status: "rejected", reason }),
     });
     await load();
   };
@@ -131,9 +138,26 @@ export default function AdminFundRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold text-white">Payment requests</h1>
         <p className="text-sm text-slate-400 mt-1">Pending and past add-fund submissions (paginated).</p>
+        <div className="flex flex-wrap gap-2">
+          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <SlidersHorizontal size={14} className="text-slate-400" />
+            <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value as "" | "pending" | "approved" | "rejected"); }} className="bg-transparent text-sm text-white outline-none">
+              <option value="">All status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <Search size={14} className="text-slate-400" />
+            <input value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} placeholder="Search id, note, reason" className="bg-transparent text-sm text-white outline-none" />
+          </div>
+          <input value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -227,7 +251,7 @@ export default function AdminFundRequestsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => reject(row.id)}
+                            onClick={() => { setRejectRow(row); setRejectReason("Rejected after admin verification."); }}
                             className="rounded-lg bg-red-600/90 px-2 py-1 text-xs text-white hover:bg-red-500"
                           >
                             Reject
@@ -372,6 +396,40 @@ export default function AdminFundRequestsPage() {
             {!proofLoading && proofPreviewUrl && (
               <Image src={proofPreviewUrl} alt="Payment proof" width={1200} height={900} unoptimized className="max-h-[75vh] w-auto rounded border border-white/10" />
             )}
+          </div>
+        </div>
+      )}
+      {rejectRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-white font-medium">Reject payment request</h3>
+              <button onClick={() => setRejectRow(null)} className="rounded p-1 hover:bg-white/10"><X size={18} /></button>
+            </div>
+            <p className="mb-2 text-xs text-slate-400">Amount: {formatInr(rejectRow.requestedAmount)}</p>
+            <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows={4} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" placeholder="Enter rejection reason" />
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setRejectRow(null)} className="rounded border border-white/10 px-3 py-2 text-sm">Cancel</button>
+              <button
+                disabled={rejectSubmitting}
+                onClick={async () => {
+                  if (!rejectReason.trim()) {
+                    setError("Reason is required before rejecting.");
+                    return;
+                  }
+                  setRejectSubmitting(true);
+                  try {
+                    await reject(rejectRow.id, rejectReason.trim());
+                    setRejectRow(null);
+                  } finally {
+                    setRejectSubmitting(false);
+                  }
+                }}
+                className="rounded bg-red-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+              >
+                {rejectSubmitting ? "Saving..." : "Confirm reject"}
+              </button>
+            </div>
           </div>
         </div>
       )}

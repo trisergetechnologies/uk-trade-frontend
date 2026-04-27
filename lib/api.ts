@@ -122,8 +122,16 @@ export async function getMyFundRequests(page = 1, limit = 20): Promise<Paginated
   return apiFetch(`/api/fund-requests/me?${q}`);
 }
 
-export async function getAdminFundRequests(page = 1, limit = 20): Promise<PaginatedFundRequests> {
+export async function getAdminFundRequests(
+  page = 1,
+  limit = 20,
+  filters?: { status?: '' | 'pending' | 'approved' | 'rejected'; q?: string; from?: string; to?: string }
+): Promise<PaginatedFundRequests> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (filters?.status) q.set('status', filters.status);
+  if (filters?.q?.trim()) q.set('q', filters.q.trim());
+  if (filters?.from?.trim()) q.set('from', filters.from.trim());
+  if (filters?.to?.trim()) q.set('to', filters.to.trim());
   return apiFetch(`/api/fund-requests/admin?${q}`);
 }
 
@@ -163,7 +171,7 @@ export type AdminOverviewDto = {
     totalPlans: number;
     totalPackages: number;
   };
-  series: Array<{ day: string; approvedFundsIn: number; approvedWithdrawalsOut: number }>;
+  series: Array<{ day: string; fundRequestsAmount: number; purchaseAmount: number; approvedWithdrawalsOut: number }>;
 };
 
 export async function getAdminOverview(days = 14): Promise<ApiSuccess<AdminOverviewDto>> {
