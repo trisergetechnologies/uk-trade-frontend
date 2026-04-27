@@ -15,8 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LLMProject",
-  description: "Modern marketing website",
+  applicationName: "UK Trade",
+  title: {
+    default: "UK Trade",
+    template: "%s | UK Trade",
+  },
+  description: "UK Trade platform",
 };
 
 export default function RootLayout({

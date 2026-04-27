@@ -1,5 +1,5 @@
-import SendRequest from "@/components/addfund/SendRequest";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <SendRequest />;
+  redirect("/userdashboard/add-fund");
 }

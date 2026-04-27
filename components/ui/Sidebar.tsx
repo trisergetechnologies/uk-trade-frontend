@@ -7,11 +7,12 @@ import {
   ArrowRightLeft,
   Download,
   Users,
-  GitBranch,
   BarChart3,
   HelpCircle,
   TrendingUp,
   Sparkles,
+  FileText,
+  Package,
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -51,6 +52,8 @@ const MENU: MenuSection[] = [
     title: "FINANCE",
     items: [
       { name: "Add Fund", href: "/userdashboard/add-fund", icon: Wallet },
+      { name: "Package", href: "/userdashboard/package", icon: Package },
+      { name: "Wallet ledger", href: "/userdashboard/wallet-ledger", icon: FileText },
       { name: "Withdraw", href: "/userdashboard/withdraw", icon: Download },
       { name: "Fund Transfer", href: "/userdashboard/fund-transfer", icon: ArrowRightLeft },
     ],
@@ -59,7 +62,6 @@ const MENU: MenuSection[] = [
     title: "TEAM",
     items: [
       { name: "My Team", href: "/userdashboard/team", icon: Users },
-      { name: "Member Tree", href: "/userdashboard/tree", icon: GitBranch },
     ],
   },
   {
@@ -112,19 +114,8 @@ export default function Sidebar() {
             <Sparkles size={16} className="text-white" />
           </div>
           <span className="text-lg font-semibold text-white tracking-wide">
-            MLM Panel
+            UK Trade
           </span>
-        </div>
-      </div>
-
-      {/* ---------- USER ---------- */}
-      <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-          JD
-        </div>
-        <div>
-          <p className="text-sm text-white font-medium">John Doe</p>
-          <p className="text-xs text-slate-400">Premium Member</p>
         </div>
       </div>
 

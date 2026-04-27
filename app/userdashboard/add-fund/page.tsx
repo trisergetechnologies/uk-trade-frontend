@@ -1,5 +1,5 @@
-import AddFundHome from "@/components/addfund/AddFundHome";
+import AddFundFlow from "@/components/addfund/AddFundFlow";
 
 export default function Page() {
-  return <AddFundHome />;
+  return <AddFundFlow />;
 }

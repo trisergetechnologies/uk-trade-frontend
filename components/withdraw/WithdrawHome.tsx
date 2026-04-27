@@ -1,139 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-  ArrowUpRight,
-  History,
-  Wallet,
-  ShieldCheck,
-  Clock,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, History, Landmark, Loader2, Wallet } from "lucide-react";
+import { getMyBankAccount, getWalletMe } from "@/lib/api";
+import { formatInr } from "@/lib/formatInr";
 
 export default function WithdrawHome() {
+  const [balance, setBalance] = useState(0);
+  const [eligible, setEligible] = useState(0);
+  const [bankReady, setBankReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [walletRes, bankRes] = await Promise.all([getWalletMe(), getMyBankAccount()]);
+        if (cancelled) return;
+        setBalance(Number(walletRes.data?.balance) || 0);
+        setEligible(Number(walletRes.data?.eligibleToWithdraw) || 0);
+        setBankReady(Boolean(bankRes.data?.isComplete));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <section className="relative w-full py-16 px-4 flex justify-center">
+    <section className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-6">
+        <h2 className="text-2xl font-semibold text-white">Withdraw Funds</h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Add bank account once, then request withdrawals based on eligible amount.
+        </p>
+      </div>
 
-      {/* ---------- Background ---------- */}
-      <div className="absolute inset-0 bg-[#05070d]" />
-      <div className="absolute w-[400px] h-[400px] bg-indigo-600 blur-[120px] opacity-20 top-[-120px] left-[-120px]" />
-      <div className="absolute w-[300px] h-[300px] bg-purple-600 blur-[120px] opacity-20 bottom-[-100px] right-[-100px]" />
-
-      {/* ---------- Container ---------- */}
-      <div className="relative w-full max-w-4xl rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
-
-        <div className="bg-[#0b0f1a]/90 backdrop-blur-2xl rounded-3xl p-8 md:p-10 border border-white/10 shadow-[0_0_80px_rgba(99,102,241,0.15)]">
-
-          {/* ---------- Header ---------- */}
-          <div className="flex justify-between items-start mb-8">
-
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg">
-                  <Wallet className="text-white" size={22} />
-                </div>
-
-                <h2 className="text-3xl md:text-4xl font-bold text-white">
-                  Withdraw Funds
-                </h2>
-              </div>
-
-              <p className="text-slate-400 text-sm ml-1">
-                Secure withdrawals directly to your bank or UPI
-              </p>
-            </div>
-
-            <ShieldCheck className="hidden sm:block text-slate-600" size={34} />
-          </div>
-
-          {/* ---------- Balance Strip ---------- */}
-          <div className="mb-8 flex justify-between items-center bg-white/5 border border-white/10 rounded-2xl p-5">
-
-            <div>
-              <p className="text-slate-400 text-xs">Available Balance</p>
-              <p className="text-white text-2xl font-semibold">₹ 18,750</p>
-            </div>
-
-            <div className="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-              Eligible
-            </div>
-
-          </div>
-
-          {/* ---------- Actions ---------- */}
-          <div className="grid sm:grid-cols-2 gap-6">
-
-            {/* Send Request */}
-            <motion.div whileHover={{ scale: 1.04 }}>
-              <Link
-                href="/userdashboard/withdraw/send-request"
-                className="group relative block rounded-2xl overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 opacity-90" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white transition" />
-
-                <div className="relative p-6 text-center text-white">
-
-                  <div className="mx-auto mb-4 w-fit p-4 rounded-xl bg-white/20 group-hover:scale-110 transition">
-                    <ArrowUpRight size={26} />
-                  </div>
-
-                  <h3 className="text-lg font-semibold mb-1">
-                    Send Withdrawal Request
-                  </h3>
-
-                  <p className="text-xs text-white/80">
-                    Transfer funds to your bank or UPI
-                  </p>
-
-                  <div className="mt-3 h-[2px] w-0 bg-white mx-auto group-hover:w-16 transition-all duration-300" />
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* History */}
-            <motion.div whileHover={{ scale: 1.04 }}>
-              <Link
-                href="/userdashboard/withdraw/withdraw-histroy"
-                className="group relative block rounded-2xl overflow-hidden bg-white/5 border border-white/10"
-              >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 bg-white transition" />
-
-                <div className="relative p-6 text-center text-white">
-
-                  <div className="mx-auto mb-4 w-fit p-4 rounded-xl bg-white/10 group-hover:scale-110 transition">
-                    <History size={26} />
-                  </div>
-
-                  <h3 className="text-lg font-semibold mb-1">
-                    Withdrawal History
-                  </h3>
-
-                  <p className="text-xs text-slate-400">
-                    Track all withdrawal requests
-                  </p>
-
-                  <div className="mt-3 h-[2px] w-0 bg-indigo-400 mx-auto group-hover:w-16 transition-all duration-300" />
-                </div>
-              </Link>
-            </motion.div>
-
-          </div>
-
-          {/* ---------- Info Banner ---------- */}
-          <div className="mt-8 flex items-center gap-3 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-
-            <Clock size={16} className="text-yellow-400" />
-
-            <p className="text-xs text-slate-400">
-              Withdrawals are processed within{" "}
-              <span className="text-white font-medium">24–48 hours</span>. Minimum withdrawal:{" "}
-              <span className="text-white font-medium">₹500</span>.
-            </p>
-
-          </div>
-
+      <div className="grid sm:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs text-slate-500">Wallet Balance</p>
+          <p className="text-lg text-white font-semibold">{formatInr(balance)}</p>
         </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs text-slate-500">Eligible To Withdraw</p>
+          <p className="text-lg text-white font-semibold">{formatInr(eligible)}</p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs text-slate-500">Bank Account</p>
+          <p className={`text-sm font-medium ${bankReady ? "text-emerald-400" : "text-amber-400"}`}>
+            {bankReady ? "Configured" : "Not added"}
+          </p>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="text-slate-400 text-sm flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Link
+          href="/userdashboard/withdraw/send-request"
+          className="rounded-2xl border border-indigo-500/40 bg-indigo-500/10 p-5 hover:bg-indigo-500/15 transition"
+        >
+          <div className="flex items-center gap-2 text-white font-medium">
+            <ArrowUpRight className="w-4 h-4" />
+            Request Withdrawal
+          </div>
+          <p className="text-xs text-slate-300 mt-2">Uses saved bank account by default. Edit only when needed.</p>
+        </Link>
+        <Link
+          href="/userdashboard/withdraw/withdraw-histroy"
+          className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition"
+        >
+          <div className="flex items-center gap-2 text-white font-medium">
+            <History className="w-4 h-4" />
+            Withdrawal History
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Track pending, approved, and rejected requests.</p>
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs text-slate-400 flex items-center gap-2">
+        <Landmark className="w-4 h-4 text-indigo-400" />
+        Requests are only accepted when amount is within both wallet balance and eligible-to-withdraw limits.
       </div>
     </section>
   );
