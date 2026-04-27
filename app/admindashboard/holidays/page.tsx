@@ -48,6 +48,8 @@ export default function AdminHolidaysPage() {
 
   const remove = async (d: string) => {
     try {
+      const ok = window.confirm(`Delete holiday ${d}? This can change daily credit behavior for that date.`);
+      if (!ok) return;
       await deleteAdminHoliday(d);
       await load();
     } catch (e) {

@@ -7,7 +7,8 @@ export { getToken };
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = getToken();
   const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (!isFormData) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
   const response = await fetch(`${API_BASE}${path}`, {
@@ -87,10 +88,21 @@ export type FundRequestRow = {
   approvedAmount: number | null;
   status: 'pending' | 'approved' | 'rejected';
   notes?: string;
-  screenshotUrl?: string;
+  paymentProofPath?: string;
   createdAt?: string;
   userId?: string | { id?: string; name?: string; email?: string; userCode?: string };
 };
+
+export async function postFundRequest(body: { amount: number; notes?: string; screenshot: File }): Promise<ApiSuccess<FundRequestRow>> {
+  const form = new FormData();
+  form.append('amount', String(body.amount));
+  if (body.notes?.trim()) form.append('notes', body.notes.trim());
+  form.append('screenshot', body.screenshot);
+  return apiFetch('/api/fund-requests', {
+    method: 'POST',
+    body: form,
+  });
+}
 
 export type PaginatedMeta = {
   page: number;
@@ -110,8 +122,16 @@ export async function getMyFundRequests(page = 1, limit = 20): Promise<Paginated
   return apiFetch(`/api/fund-requests/me?${q}`);
 }
 
-export async function getAdminFundRequests(page = 1, limit = 20): Promise<PaginatedFundRequests> {
+export async function getAdminFundRequests(
+  page = 1,
+  limit = 20,
+  filters?: { status?: '' | 'pending' | 'approved' | 'rejected'; q?: string; from?: string; to?: string }
+): Promise<PaginatedFundRequests> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (filters?.status) q.set('status', filters.status);
+  if (filters?.q?.trim()) q.set('q', filters.q.trim());
+  if (filters?.from?.trim()) q.set('from', filters.from.trim());
+  if (filters?.to?.trim()) q.set('to', filters.to.trim());
   return apiFetch(`/api/fund-requests/admin?${q}`);
 }
 
@@ -130,6 +150,146 @@ export type AdminFundRequestDetail = {
 
 export async function getAdminFundRequestDetail(id: string): Promise<ApiSuccess<AdminFundRequestDetail>> {
   return apiFetch(`/api/fund-requests/admin/${id}`);
+}
+
+export async function getAdminPaymentProofBlob(id: string): Promise<Blob> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(`${API_BASE}/api/admin/media/payment-proof/${id}`, { headers, cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch payment proof: ${res.status}`);
+  return res.blob();
+}
+
+export type AdminOverviewDto = {
+  totals: {
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+    pendingFundRequests: number;
+    pendingWithdrawals: number;
+    totalPlans: number;
+    totalPackages: number;
+  };
+  series: Array<{ day: string; fundRequestsAmount: number; purchaseAmount: number; approvedWithdrawalsOut: number }>;
+};
+
+export async function getAdminOverview(days = 14): Promise<ApiSuccess<AdminOverviewDto>> {
+  return apiFetch(`/api/admin/overview?days=${days}`);
+}
+
+export type AdminPlanRow = PlanRow & { isActive?: boolean };
+export type AdminPackageProductRow = PackageProductRow & { isActive?: boolean };
+
+export async function getAdminPlans(): Promise<ApiSuccess<AdminPlanRow[]>> {
+  return apiFetch('/api/admin/plans');
+}
+
+export async function postAdminPlan(body: {
+  code: string;
+  name: string;
+  dailyPercent: number;
+  cycleDaysW: number;
+  maxWorkingDaysN: number;
+  sponsorPercent?: number;
+  summary?: string;
+  detailHelp?: string;
+  isActive?: boolean;
+}): Promise<ApiSuccess<AdminPlanRow>> {
+  return apiFetch('/api/admin/plans', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function getAdminPackageProducts(): Promise<ApiSuccess<AdminPackageProductRow[]>> {
+  return apiFetch('/api/admin/package-products');
+}
+
+export async function postAdminPackageProduct(body: {
+  code: string;
+  name: string;
+  amount: number;
+  shortDescription?: string;
+  detailHelp?: string;
+  features?: string[];
+  sortOrder?: number;
+  isActive?: boolean;
+}): Promise<ApiSuccess<AdminPackageProductRow>> {
+  return apiFetch('/api/admin/package-products', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export type AdminUserRow = {
+  id: string;
+  userCode?: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export async function getAdminUsers(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  role?: string;
+  isActive?: boolean;
+}): Promise<ApiSuccess<AdminUserRow[]> & { meta: PaginatedMeta }> {
+  const q = new URLSearchParams({
+    page: String(params?.page || 1),
+    limit: String(params?.limit || 20),
+  });
+  if (params?.q?.trim()) q.set('q', params.q.trim());
+  if (params?.role?.trim()) q.set('role', params.role.trim());
+  if (typeof params?.isActive === 'boolean') q.set('isActive', String(params.isActive));
+  return apiFetch(`/api/admin/users?${q}`);
+}
+
+export type AdminUserDetailDto = {
+  user: AdminUserRow & { referralCode?: string; preferredCommunity?: string };
+  wallet?: { balance: number; eligibleToWithdraw: number; updatedAt?: string };
+  fundStats?: Array<{ id?: string; count: number }>;
+  withdrawalStats?: Array<{ id?: string; count: number; amount?: number }>;
+};
+
+export async function getAdminUserDetail(userCode: string): Promise<ApiSuccess<AdminUserDetailDto>> {
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}`);
+}
+
+export async function patchAdminUserStatus(userCode: string, isActive: boolean): Promise<ApiSuccess<AdminUserRow>> {
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive }),
+  });
+}
+
+export type AdminAuditLogRow = {
+  id: string;
+  action: string;
+  targetType: string;
+  details?: Record<string, unknown>;
+  createdAt?: string;
+  actorUserId?: { id?: string; userCode?: string; name?: string; email?: string };
+};
+
+export async function getAdminAuditLogs(params?: {
+  page?: number;
+  limit?: number;
+  action?: string;
+  targetType?: string;
+  actorUserCode?: string;
+  from?: string;
+  to?: string;
+}): Promise<ApiSuccess<AdminAuditLogRow[]> & { meta: PaginatedMeta }> {
+  const q = new URLSearchParams({
+    page: String(params?.page || 1),
+    limit: String(params?.limit || 20),
+  });
+  if (params?.action?.trim()) q.set('action', params.action.trim());
+  if (params?.targetType?.trim()) q.set('targetType', params.targetType.trim());
+  if (params?.actorUserCode?.trim()) q.set('actorUserCode', params.actorUserCode.trim().toUpperCase());
+  if (params?.from?.trim()) q.set('from', params.from.trim());
+  if (params?.to?.trim()) q.set('to', params.to.trim());
+  return apiFetch(`/api/admin/audit-logs?${q}`);
 }
 
 export type HolidayRow = {
@@ -220,10 +380,14 @@ export async function getMyWithdrawals(
 export async function getAdminWithdrawals(
   page = 1,
   limit = 20,
-  status?: WithdrawalStatusFilter
+  status?: WithdrawalStatusFilter,
+  filters?: { q?: string; from?: string; to?: string }
 ): Promise<PaginatedWithdrawals> {
   const q = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (status) q.set('status', status);
+  if (filters?.q?.trim()) q.set('q', filters.q.trim());
+  if (filters?.from?.trim()) q.set('from', filters.from.trim());
+  if (filters?.to?.trim()) q.set('to', filters.to.trim());
   return apiFetch(`/api/withdrawals/admin?${q}`);
 }
 
