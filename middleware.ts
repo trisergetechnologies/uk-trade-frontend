@@ -76,6 +76,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/userdashboard', request.url));
   }
 
+  if (isUserDash && role === 'admin') {
+    return NextResponse.redirect(new URL('/admindashboard', request.url));
+  }
+
   return NextResponse.next();
 }
 

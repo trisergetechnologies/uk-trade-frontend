@@ -73,6 +73,17 @@ export async function putAuthMe(body: {
   });
 }
 
+export async function patchMyPassword(body: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<ApiSuccess<{ message?: string }>> {
+  return apiFetch('/api/auth/me/password', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
 export type WalletDto = {
   balance: number;
   eligibleToWithdraw: number;

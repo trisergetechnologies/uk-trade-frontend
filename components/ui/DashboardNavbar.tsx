@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAuthMe, type AuthUser } from "@/lib/api";
 
@@ -24,7 +24,7 @@ export default function DashboardNavbar() {
 
   const displayName = user?.name?.trim() || "Account";
   const emailLine = user?.email || "User dashboard";
-  const codeLine = user?.userCode ? `ID: ${user.userCode}` : "";
+  const codeLine = user?.role === "admin" ? "" : user?.userCode ? `ID: ${user.userCode}` : "";
 
   return (
     <header
@@ -46,30 +46,6 @@ export default function DashboardNavbar() {
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
         <span className="hidden md:block text-sm text-slate-400">Welcome back 👋</span>
-      </div>
-
-      <div
-        className="
-          hidden md:flex items-center
-          w-[420px]
-          bg-white/5
-          border border-white/10
-          px-4 py-2.5
-          rounded-2xl
-          transition-all duration-300
-          focus-within:ring-2 focus-within:ring-blue-500/30
-          focus-within:bg-white/10
-        "
-      >
-        <Search size={18} className="text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search dashboard..."
-          className="
-            bg-transparent outline-none ml-3 w-full text-sm
-            text-white placeholder:text-slate-500
-          "
-        />
       </div>
 
       <div className="flex items-center gap-5">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { deleteAdminHoliday, getAdminHolidays, postAdminHoliday } from "@/lib/api";
 import type { HolidayRow, PaginatedMeta } from "@/lib/api";
 
@@ -14,6 +14,8 @@ export default function AdminHolidaysPage() {
   const [error, setError] = useState("");
   const [dateIst, setDateIst] = useState("");
   const [reason, setReason] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [deletingDate, setDeletingDate] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -32,17 +34,20 @@ export default function AdminHolidaysPage() {
 
   const add = async () => {
     setError("");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIst)) {
+    if (!dateIst || !/^\d{4}-\d{2}-\d{2}$/.test(dateIst)) {
       setError("Use YYYY-MM-DD (IST calendar date).");
       return;
     }
     try {
+      setAdding(true);
       await postAdminHoliday({ dateIst, reason: reason || undefined });
       setDateIst("");
       setReason("");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -50,10 +55,13 @@ export default function AdminHolidaysPage() {
     try {
       const ok = window.confirm(`Delete holiday ${d}? This can change daily credit behavior for that date.`);
       if (!ok) return;
+      setDeletingDate(d);
       await deleteAdminHoliday(d);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setDeletingDate("");
     }
   };
 
@@ -61,39 +69,46 @@ export default function AdminHolidaysPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Market holidays</h1>
-        <p className="text-sm text-slate-400 mt-1">NSE-style calendar entries — trade income skips these IST dates.</p>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+          <CalendarClock size={22} className="text-indigo-300" />
+          Market holidays
+        </h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Trading credits are skipped on these IST dates. Add only confirmed market-off days.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3 max-w-xl">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-3 max-w-2xl">
         <p className="text-xs text-slate-500 uppercase tracking-wide">Add holiday</p>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input
-            placeholder="YYYY-MM-DD"
+            type="date"
             value={dateIst}
             onChange={(e) => setDateIst(e.target.value)}
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white text-sm"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white text-sm"
           />
           <input
             placeholder="Reason (optional)"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white text-sm"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white text-sm"
           />
           <button
             type="button"
+            disabled={adding}
             onClick={() => void add()}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50"
           >
-            Add
+            <Plus size={16} />
+            {adding ? "Adding..." : "Add holiday"}
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03]">
         <table className="w-full text-left text-sm text-slate-300">
           <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
             <tr>
@@ -112,17 +127,19 @@ export default function AdminHolidaysPage() {
               </tr>
             )}
             {rows.map((r) => (
-              <tr key={r.id} className="border-b border-white/5">
+              <tr key={r.dateIst} className="border-b border-white/5">
                 <td className="px-4 py-3 text-white">{r.dateIst}</td>
                 <td className="px-4 py-3">{r.exchange}</td>
                 <td className="px-4 py-3 text-slate-400">{r.reason || "—"}</td>
                 <td className="px-4 py-3">
                   <button
                     type="button"
+                    disabled={deletingDate === r.dateIst}
                     onClick={() => void remove(r.dateIst)}
-                    className="text-xs text-red-400 hover:underline"
+                    className="inline-flex items-center gap-1 text-xs text-red-400 hover:underline disabled:opacity-50"
                   >
-                    Delete
+                    <Trash2 size={13} />
+                    {deletingDate === r.dateIst ? "Deleting..." : "Delete"}
                   </button>
                 </td>
               </tr>
