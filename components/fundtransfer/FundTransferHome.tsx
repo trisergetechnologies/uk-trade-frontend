@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightLeft, History, Shield } from "lucide-react";
+import { ArrowRightLeft, History } from "lucide-react";
 import { motion } from "framer-motion";
 
 const cardVariants = {
@@ -24,12 +24,6 @@ export default function FundTransferHome() {
       description: "View your transfer records",
       href: "/userdashboard/fund-transfer/user-transfer-history", // ✅ fixed spelling
       icon: History,
-    },
-    {
-      name: "Admin History",
-      description: "Monitor admin-level transactions",
-      href: "/userdashboard/fund-transfer/admin-transfer-history", // ✅ fixed spelling
-      icon: Shield,
     },
   ];
 
@@ -58,7 +52,7 @@ export default function FundTransferHome() {
         </motion.div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-8">
 
           {actions.map((item, index) => (
             <motion.div

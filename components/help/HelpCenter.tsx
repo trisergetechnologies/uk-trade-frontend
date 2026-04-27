@@ -2,20 +2,32 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Mail, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    q: "How to add funds?",
-    a: "Go to Add Fund → Send Request → Submit payment details and wait for admin approval.",
+    q: "How do I add funds to my wallet?",
+    a: "Open Add Fund, submit your payment proof and amount, then wait for admin approval. Approved amount is credited to your wallet.",
   },
   {
-    q: "How to withdraw money?",
-    a: "Navigate to Withdraw → Submit request → Funds will be processed after approval.",
+    q: "Why can I not withdraw full wallet balance?",
+    a: "Withdrawals are based on eligible amount, not full wallet balance. Check your eligible amount on wallet and payout pages before creating request.",
   },
   {
-    q: "How long does approval take?",
-    a: "Usually within 24 hours depending on admin verification.",
+    q: "How does fund transfer work?",
+    a: "Use recipient user ID, amount and optional note. Transfer is allowed only when your eligible amount is sufficient. Recipient gets the amount in eligible balance.",
+  },
+  {
+    q: "What does community and side mean in team tree?",
+    a: "Community is your global lane (left/right). Side is your local branch position under a parent node. Level shows depth in the tree.",
+  },
+  {
+    q: "Where do I see income and payout status?",
+    a: "Use Income Report for trade/sponsor/matching streams and Payout Summary for approved, pending and rejected withdrawal requests.",
+  },
+  {
+    q: "How to find a user in team tree?",
+    a: "Go to My Team > Member Tree and search by user ID. The focused context will show parent, direct downline and second-level downline.",
   },
 ];
 
@@ -25,7 +37,7 @@ export default function HelpCenter() {
   return (
     <section className="relative min-h-screen w-full px-6 py-20 flex justify-center overflow-hidden">
 
-      {/* 🌌 Background */}
+      {/* Background */}
       <div className="absolute inset-0 bg-[#05070d]" />
       <div className="absolute w-[400px] h-[400px] bg-indigo-600 blur-[140px] opacity-20 top-[-100px] left-[-100px]" />
       <div className="absolute w-[350px] h-[350px] bg-purple-600 blur-[120px] opacity-20 bottom-[-100px] right-[-100px]" />
@@ -39,18 +51,8 @@ export default function HelpCenter() {
             Help Center
           </h1>
           <p className="text-slate-400 mt-3">
-            Find answers and support for your MLM system
+            Common questions and platform usage guidance
           </p>
-        </div>
-
-        {/* 🔍 Search Bar */}
-        <div className="mb-10 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search help..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
         </div>
 
         {/* FAQ Section */}
@@ -91,27 +93,6 @@ export default function HelpCenter() {
             );
           })}
         </div>
-
-        {/* 📩 Support Box */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-12 p-6 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-white/10 text-center"
-        >
-          <Mail className="mx-auto mb-3 text-indigo-400" size={28} />
-
-          <h3 className="text-white font-semibold text-lg">
-            Still need help?
-          </h3>
-
-          <p className="text-slate-400 text-sm mt-1">
-            Contact our support team anytime
-          </p>
-
-          <p className="text-indigo-400 mt-3 font-medium">
-            support@aiwedia.com
-          </p>
-        </motion.div>
 
       </div>
     </section>

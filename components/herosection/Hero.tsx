@@ -2,6 +2,57 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+/** Orbit markers: Framer Motion formats transforms differently in Node vs the browser, which breaks hydration. */
+function OrbitNode({
+  baseX,
+  baseY,
+  duration,
+}: {
+  baseX: number;
+  baseY: number;
+  duration: number;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const snapX = Math.round(baseX);
+  const snapY = Math.round(baseY);
+
+  if (!mounted) {
+    return (
+      <div
+        className="absolute"
+        style={{ transform: `translate(${snapX}px, ${snapY}px)` }}
+      >
+        <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center">
+          ₹
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      className="absolute"
+      initial={{ x: baseX, y: baseY }}
+      animate={{
+        x: baseX,
+        y: [baseY, baseY - 6, baseY],
+      }}
+      transition={{ repeat: Infinity, duration }}
+    >
+      <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center">
+        ₹
+      </div>
+    </motion.div>
+  );
+}
 
 export default function Hero() {
   return (
@@ -48,13 +99,19 @@ export default function Hero() {
             transition={{ delay: 0.4 }}
             className="mt-10 flex gap-4"
           >
-            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105 transition shadow-lg shadow-purple-500/20">
+            <Link
+              href="/register"
+              className="inline-flex px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 hover:scale-105 transition shadow-lg shadow-purple-500/20"
+            >
               Start Earning
-            </button>
+            </Link>
 
-            <button className="px-6 py-3 rounded-xl border border-white/20 flex items-center gap-2 hover:bg-white/5 transition">
+            <Link
+              href="/userdashboard"
+              className="inline-flex px-6 py-3 rounded-xl border border-white/20 items-center gap-2 hover:bg-white/5 transition"
+            >
               View Demo <ArrowRight size={18} />
-            </button>
+            </Link>
           </motion.div>
 
           {/* Stats */}
@@ -99,6 +156,8 @@ export default function Hero() {
             {[...Array(6)].map((_, i) => {
               const angle = (i * 60) * (Math.PI / 180);
               const radius = 130;
+              const baseX = Math.cos(angle) * radius;
+              const baseY = Math.sin(angle) * radius;
 
               return (
                 <div key={i}>
@@ -113,19 +172,7 @@ export default function Hero() {
                     }}
                   />
 
-                  {/* Node */}
-                  <motion.div
-                    className="absolute"
-                    style={{
-                      transform: `translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)`
-                    }}
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ repeat: Infinity, duration: 2 + i }}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center">
-                      ₹
-                    </div>
-                  </motion.div>
+                  <OrbitNode baseX={baseX} baseY={baseY} duration={2 + i} />
                 </div>
               );
             })}

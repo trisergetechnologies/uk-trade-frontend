@@ -108,7 +108,7 @@ const Navbar = () => {
           {/* CTA */}
           <div className="hidden lg:flex items-center gap-3">
             <Link
-              href="#"
+              href="/login"
               className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition flex items-center gap-2"
             >
               <LogIn className="w-4 h-4" />
@@ -116,7 +116,7 @@ const Navbar = () => {
             </Link>
 
             <Link
-              href="#"
+              href="/register"
               className="relative px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105 transition shadow-lg shadow-purple-500/20"
             >
               Get Started
@@ -163,6 +163,23 @@ const Navbar = () => {
               {item}
             </Link>
           ))}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <Link
+              href="/login"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-300 hover:text-white transition"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block text-center rounded-xl py-3 font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </div>
     </header>

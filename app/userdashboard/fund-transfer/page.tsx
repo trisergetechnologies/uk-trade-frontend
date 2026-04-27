@@ -1,5 +1,5 @@
-import FundTransferHome from "@/components/fundtransfer/FundTransferHome";
+import FundTransferToUser from "@/components/fundtransfer/FundTransferToUser";
 
 export default function Page() {
-  return <FundTransferHome />;
+  return <FundTransferToUser />;
 }

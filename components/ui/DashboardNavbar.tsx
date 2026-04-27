@@ -1,8 +1,31 @@
 "use client";
 
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Search, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getAuthMe, type AuthUser } from "@/lib/api";
 
 export default function DashboardNavbar() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getAuthMe();
+        if (!cancelled) setUser(res.data);
+      } catch {
+        if (!cancelled) setUser(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayName = user?.name?.trim() || "Account";
+  const emailLine = user?.email || "User dashboard";
+  const codeLine = user?.userCode ? `ID: ${user.userCode}` : "";
+
   return (
     <header
       className="
@@ -15,23 +38,16 @@ export default function DashboardNavbar() {
         shrink-0
       "
     >
-      {/* Glow Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-0 top-0 w-[300px] h-[200px] bg-blue-500/10 blur-[100px]" />
         <div className="absolute right-0 top-0 w-[300px] h-[200px] bg-purple-500/10 blur-[100px]" />
       </div>
 
-      {/* LEFT */}
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-white tracking-tight">
-          Dashboard
-        </h1>
-        <span className="hidden md:block text-sm text-slate-400">
-          Welcome back 👋
-        </span>
+        <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
+        <span className="hidden md:block text-sm text-slate-400">Welcome back 👋</span>
       </div>
 
-      {/* CENTER SEARCH */}
       <div
         className="
           hidden md:flex items-center
@@ -56,54 +72,25 @@ export default function DashboardNavbar() {
         />
       </div>
 
-      {/* RIGHT */}
       <div className="flex items-center gap-5">
-        {/* Notification */}
-        <button
-          className="
-            relative p-3 rounded-2xl
-            bg-white/5 border border-white/10
-            hover:bg-white/10
-            transition-all duration-300
-            hover:scale-105
-          "
-        >
-          <Bell size={20} className="text-slate-300" />
-          <span
-            className="
-              absolute top-2 right-2
-              w-2.5 h-2.5
-              bg-red-500 rounded-full
-              ring-2 ring-[#0B0F19]
-            "
-          />
-        </button>
-
-        {/* Divider */}
         <div className="hidden md:block h-8 w-px bg-white/10" />
 
-        {/* Profile */}
-        <button
+        <div
           className="
             flex items-center gap-3
             px-3 py-2 rounded-2xl
             bg-white/5 border border-white/10
-            hover:bg-white/10
-            transition-all duration-300
-            hover:scale-[1.02]
           "
         >
-          <img
-            src="https://i.pravatar.cc/40"
-            alt="User"
-            className="w-10 h-10 rounded-full ring-2 ring-white/20"
-          />
-          <div className="hidden md:flex flex-col text-left">
-            <span className="text-sm font-semibold text-white">Admin</span>
-            <span className="text-xs text-slate-400">Administrator</span>
+          <div className="w-10 h-10 rounded-full ring-2 ring-white/20 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+            {user?.name?.trim() ? user.name.trim().charAt(0).toUpperCase() : <User size={20} className="text-white" />}
           </div>
-          <ChevronDown size={18} className="hidden md:block text-slate-400" />
-        </button>
+          <div className="hidden md:flex flex-col text-left min-w-0 max-w-[220px]">
+            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
+            <span className="text-xs text-slate-400 truncate">{emailLine}</span>
+            {codeLine && <span className="text-[11px] text-indigo-300 truncate">{codeLine}</span>}
+          </div>
+        </div>
       </div>
     </header>
   );

@@ -11,6 +11,7 @@ import {
 } from "@react-three/drei";
 import { useRef, useMemo, useState } from "react";
 import * as THREE from "three";
+import Link from "next/link";
 
 /* ---------- COIN TEXTURE ---------- */
 function createCoinTexture() {
@@ -168,15 +169,18 @@ export default function Hero3D() {
           Watch your earnings grow with a powerful network-driven system.
         </p>
 
-        <button className="
-          mt-8 px-8 py-3
+        <Link
+          href="/register"
+          className="
+          mt-8 inline-block px-8 py-3
           bg-yellow-400 text-black
           rounded-full font-semibold
           hover:scale-110 hover:shadow-[0_0_30px_#FFD700]
           transition
-        ">
+        "
+        >
           Get Started
-        </button>
+        </Link>
 
       </div>
     </section>
