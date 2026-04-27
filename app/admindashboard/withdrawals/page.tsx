@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   apiFetch,
   getAdminWithdrawals,
@@ -28,12 +28,19 @@ export default function AdminWithdrawalsPage() {
   const [status, setStatus] = useState<WithdrawalStatusFilter>("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [reviewRow, setReviewRow] = useState<WithdrawalRow | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewDecision, setReviewDecision] = useState<"approved" | "rejected">("approved");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await getAdminWithdrawals(page, PAGE_SIZE, status);
+      const response = await getAdminWithdrawals(page, PAGE_SIZE, status, { q: query, from, to });
       setRows(response.data || []);
       setMeta(response.meta || null);
     } catch (err: unknown) {
@@ -42,7 +49,7 @@ export default function AdminWithdrawalsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, status]);
+  }, [from, page, query, status, to]);
 
   useEffect(() => {
     load();
@@ -52,10 +59,10 @@ export default function AdminWithdrawalsPage() {
     setPage(1);
   }, [status]);
 
-  const review = async (id: string, decision: "approved" | "rejected") => {
+  const review = async (id: string, decision: "approved" | "rejected", reason: string) => {
     await apiFetch(`/api/withdrawals/admin/${id}/review`, {
       method: "PATCH",
-      body: JSON.stringify({ status: decision, reason: `Reviewed as ${decision}` }),
+      body: JSON.stringify({ status: decision, reason }),
     });
     await load();
   };
@@ -82,6 +89,9 @@ export default function AdminWithdrawalsPage() {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
+          <input value={query} onChange={(e) => { setPage(1); setQuery(e.target.value); }} placeholder="Search request id or note" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
         </div>
       </div>
 
@@ -143,14 +153,22 @@ export default function AdminWithdrawalsPage() {
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => review(row.id, "approved")}
+                          onClick={() => {
+                            setReviewRow(row);
+                            setReviewDecision("approved");
+                            setReviewReason("Approved after verification.");
+                          }}
                           className="rounded-lg bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-500"
                         >
                           Approve
                         </button>
                         <button
                           type="button"
-                          onClick={() => review(row.id, "rejected")}
+                          onClick={() => {
+                            setReviewRow(row);
+                            setReviewDecision("rejected");
+                            setReviewReason("Rejected after verification.");
+                          }}
                           className="rounded-lg bg-red-600/90 px-2 py-1 text-xs text-white hover:bg-red-500"
                         >
                           Reject
@@ -194,6 +212,40 @@ export default function AdminWithdrawalsPage() {
               Next
               <ChevronRight size={18} />
             </button>
+          </div>
+        </div>
+      )}
+      {reviewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-white font-medium">{reviewDecision === "approved" ? "Approve" : "Reject"} withdrawal</h3>
+              <button onClick={() => setReviewRow(null)} className="rounded p-1 hover:bg-white/10"><X size={18} /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-2">Amount: {formatInr(reviewRow.amount)}</p>
+            <textarea value={reviewReason} onChange={(e) => setReviewReason(e.target.value)} rows={4} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" placeholder="Enter admin note" />
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setReviewRow(null)} className="rounded border border-white/10 px-3 py-2 text-sm">Cancel</button>
+              <button
+                disabled={reviewSubmitting}
+                onClick={async () => {
+                  if (!reviewReason.trim()) {
+                    setError("Note is required for withdrawal review.");
+                    return;
+                  }
+                  setReviewSubmitting(true);
+                  try {
+                    await review(reviewRow.id, reviewDecision, reviewReason.trim());
+                    setReviewRow(null);
+                  } finally {
+                    setReviewSubmitting(false);
+                  }
+                }}
+                className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+              >
+                {reviewSubmitting ? "Saving…" : "Confirm"}
+              </button>
+            </div>
           </div>
         </div>
       )}

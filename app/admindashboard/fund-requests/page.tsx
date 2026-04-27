@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
-import { apiFetch, getAdminFundRequestDetail, getAdminFundRequests } from "@/lib/api";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { apiFetch, getAdminFundRequestDetail, getAdminFundRequests, getAdminPaymentProofBlob } from "@/lib/api";
 import type { AdminFundRequestDetail, AuditLogRow, FundRequestRow, PaginatedMeta } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
 
@@ -31,6 +32,9 @@ export default function AdminFundRequestsPage() {
   const [approvedAmount, setApprovedAmount] = useState("");
   const [approveReason, setApproveReason] = useState("");
   const [approveSubmitting, setApproveSubmitting] = useState(false);
+  const [proofOpenId, setProofOpenId] = useState<string | null>(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string>("");
+  const [proofLoading, setProofLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -183,18 +187,25 @@ export default function AdminFundRequestsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {row.screenshotUrl ? (
-                      <a
-                        href={row.screenshotUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {row.paymentProofPath ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setProofOpenId(row.id);
+                          setProofLoading(true);
+                          setProofPreviewUrl("");
+                          try {
+                            const blob = await getAdminPaymentProofBlob(row.id);
+                            setProofPreviewUrl(URL.createObjectURL(blob));
+                          } finally {
+                            setProofLoading(false);
+                          }
+                        }}
                         className="inline-flex items-center gap-1 text-indigo-400 hover:underline"
                       >
-                        View <ExternalLink size={14} />
-                      </a>
-                    ) : (
-                      "—"
-                    )}
+                        View
+                      </button>
+                    ) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
@@ -347,6 +358,20 @@ export default function AdminFundRequestsPage() {
                 {approveSubmitting ? "Saving…" : "Confirm approve"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {proofOpenId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-3xl rounded-xl border border-white/10 bg-[#0b0f1a] p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-white font-medium">Payment proof</h3>
+              <button onClick={() => { setProofOpenId(null); if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl); setProofPreviewUrl(""); }} className="rounded p-1 hover:bg-white/10"><X size={18} /></button>
+            </div>
+            {proofLoading && <p className="text-slate-400 text-sm">Loading proof…</p>}
+            {!proofLoading && proofPreviewUrl && (
+              <Image src={proofPreviewUrl} alt="Payment proof" width={1200} height={900} unoptimized className="max-h-[75vh] w-auto rounded border border-white/10" />
+            )}
           </div>
         </div>
       )}

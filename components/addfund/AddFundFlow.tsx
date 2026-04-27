@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, History, IndianRupee, Loader2, Upload } from "lucide-react";
-import { apiFetch } from "@/lib/api";
-
-const MAX_SCREENSHOT_CHARS = 600_000;
+import { postFundRequest } from "@/lib/api";
 
 /** Temporary payment details — replace with real UPI / bank when ready. */
 const PAYMENT_DETAILS = {
@@ -23,32 +21,32 @@ export default function AddFundFlow() {
   const [step, setStep] = useState<Step>(1);
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  useEffect(() => {
+    return () => {
+      if (screenshotPreviewUrl) URL.revokeObjectURL(screenshotPreviewUrl);
+    };
+  }, [screenshotPreviewUrl]);
+
   function onPickFile(file: File | null) {
     setError(null);
-    setScreenshotDataUrl(null);
+    setScreenshotFile(null);
+    setScreenshotPreviewUrl(null);
     setFileName(null);
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Please choose an image file (PNG or JPG).");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      if (result.length > MAX_SCREENSHOT_CHARS) {
-        setError("Image is too large. Use a smaller screenshot (under ~400KB).");
-        return;
-      }
-      setScreenshotDataUrl(result);
-      setFileName(file.name);
-    };
-    reader.readAsDataURL(file);
+    setScreenshotFile(file);
+    setFileName(file.name);
+    setScreenshotPreviewUrl(URL.createObjectURL(file));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -59,24 +57,18 @@ export default function AddFundFlow() {
       setError("Enter a valid amount (minimum ₹100).");
       return;
     }
-    if (!screenshotDataUrl) {
+    if (!screenshotFile) {
       setError("Upload a payment screenshot.");
       return;
     }
     setLoading(true);
     try {
-      await apiFetch("/api/fund-requests", {
-        method: "POST",
-        body: JSON.stringify({
-          amount: n,
-          screenshotUrl: screenshotDataUrl,
-          notes: notes.trim() || "Add fund request",
-        }),
-      });
+      await postFundRequest({ amount: n, notes: notes.trim() || "Add fund request", screenshot: screenshotFile });
       setDone(true);
       setAmount("");
       setNotes("");
-      setScreenshotDataUrl(null);
+      setScreenshotFile(null);
+      setScreenshotPreviewUrl(null);
       setFileName(null);
       setStep(1);
     } catch (err) {
@@ -286,9 +278,9 @@ export default function AddFundFlow() {
               <span className="text-sm text-slate-400">{fileName || "Tap to upload an image"}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => onPickFile(e.target.files?.[0] || null)} />
             </label>
-            {screenshotDataUrl && (
+            {screenshotPreviewUrl && (
               <Image
-                src={screenshotDataUrl}
+                src={screenshotPreviewUrl}
                 alt="Your payment screenshot preview"
                 width={400}
                 height={300}

@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const MENU = [
-  { name: "Admin Home", href: "/admindashboard" },
+  { name: "Overview", href: "/admindashboard" },
+  { name: "Users", href: "/admindashboard/users" },
+  { name: "Plans & Packages", href: "/admindashboard/catalog" },
   { name: "Fund Requests", href: "/admindashboard/fund-requests" },
   { name: "Withdrawals", href: "/admindashboard/withdrawals" },
   { name: "Holidays", href: "/admindashboard/holidays" },
