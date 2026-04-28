@@ -1,18 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, LayoutDashboard, LineChart, Play } from "lucide-react";
 import SiteLogo from "@/components/brand/SiteLogo";
 import { StaggerItem, StaggerReveal } from "@/components/motion/Stagger";
 import HeroBackdrop from "@/components/landing/HeroBackdrop";
 import HeroVisual from "@/components/landing/HeroVisual";
 import { useClientSession } from "@/hooks/useClientSession";
+
+// Pre-computed positions to avoid hydration mismatch (no Math.random)
+const PARTICLES = [
+  { x: 5,  y: 8,  s: 1.5, dur: 7,  dy: -14, delay: 0   },
+  { x: 14, y: 35, s: 1,   dur: 9,  dy: 11,  delay: 1.5 },
+  { x: 22, y: 62, s: 2,   dur: 11, dy: -9,  delay: 0.8 },
+  { x: 8,  y: 80, s: 1.5, dur: 8,  dy: 13,  delay: 2.1 },
+  { x: 32, y: 15, s: 1,   dur: 10, dy: -11, delay: 1.2 },
+  { x: 38, y: 72, s: 1.5, dur: 7,  dy: 9,   delay: 3.0 },
+  { x: 48, y: 42, s: 1,   dur: 9,  dy: -15, delay: 0.5 },
+  { x: 55, y: 88, s: 2,   dur: 12, dy: 11,  delay: 2.5 },
+  { x: 65, y: 12, s: 1.5, dur: 8,  dy: -13, delay: 1.8 },
+  { x: 72, y: 55, s: 1,   dur: 11, dy: 9,   delay: 0.3 },
+  { x: 78, y: 28, s: 2,   dur: 9,  dy: -11, delay: 2.8 },
+  { x: 85, y: 68, s: 1,   dur: 7,  dy: 13,  delay: 1.1 },
+  { x: 92, y: 42, s: 1.5, dur: 10, dy: -9,  delay: 3.5 },
+  { x: 18, y: 50, s: 1,   dur: 8,  dy: 11,  delay: 0.7 },
+  { x: 45, y: 20, s: 2,   dur: 12, dy: -13, delay: 2.2 },
+  { x: 60, y: 75, s: 1.5, dur: 7,  dy: 9,   delay: 1.6 },
+  { x: 28, y: 90, s: 1,   dur: 9,  dy: -11, delay: 3.2 },
+  { x: 82, y: 15, s: 2,   dur: 11, dy: 13,  delay: 0.4 },
+  { x: 10, y: 25, s: 1,   dur: 8,  dy: -8,  delay: 2.6 },
+  { x: 50, y: 60, s: 1.5, dur: 10, dy: 10,  delay: 0.9 },
+] as const;
 
 export default function LandingHero() {
   const reduceMotion = useReducedMotion();
@@ -25,7 +44,9 @@ export default function LandingHero() {
 
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#050505] text-white">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+
+      {/* ── LAYER 0 — ambient backdrop ── */}
+      <div className="pointer-events-none absolute inset-0">
         <HeroBackdrop reduceMotion={!!reduceMotion} />
 
         <motion.div
@@ -42,7 +63,7 @@ export default function LandingHero() {
         />
 
         <div
-          className="absolute inset-0 opacity-[0.2]"
+          className="absolute inset-0 opacity-[0.18]"
           style={{
             backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
               linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
@@ -50,12 +71,55 @@ export default function LandingHero() {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/40 to-[#050505]" />
-
         <div className="animate-gradient-x absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500/45 to-transparent opacity-50" />
       </div>
 
-      <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-7xl grid-cols-1 items-center gap-12 px-5 pt-24 pb-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:pt-20">
-        <div className="mx-auto max-w-xl text-center lg:mx-0 lg:max-w-none lg:text-left">
+      {/* ── LAYER 1 — floating particles across the whole section ── */}
+      {!reduceMotion && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {PARTICLES.map((p, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full bg-purple-200"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${p.s * 2}px`,
+                height: `${p.s * 2}px`,
+              }}
+              animate={{ y: [0, p.dy, 0], opacity: [0.2, 0.65, 0.2] }}
+              transition={{
+                duration: p.dur,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: p.delay,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── LAYER 2 — full-viewport-height orbital (desktop right side) ── */}
+      {/* This is what was wrong before — the visual was capped at 420px in a grid cell.
+          Now it's absolutely positioned and fills the entire right 56% of the viewport height. */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[56%] lg:flex items-center justify-center">
+        <HeroVisual reduceMotion={!!reduceMotion} />
+      </div>
+
+      {/* ── LAYER 3 — directional gradient so text stays readable over the orbital ── */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to right, #050505 26%, rgba(5,5,5,0.9) 44%, rgba(5,5,5,0.35) 64%, transparent 82%)",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#050505] to-transparent" />
+
+      {/* ── LAYER 4 — text content ── */}
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-center px-5 pt-24 pb-20 sm:px-6">
+        <div className="mx-auto w-full max-w-xl text-center lg:mx-0 lg:max-w-[540px] lg:text-left">
+
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,10 +221,11 @@ export default function LandingHero() {
             </StaggerItem>
           </StaggerReveal>
         </div>
+      </div>
 
-        <div className="relative flex min-h-[280px] items-center justify-center lg:min-h-0">
-          <HeroVisual reduceMotion={!!reduceMotion} />
-        </div>
+      {/* ── Mobile: visual stacked below text ── */}
+      <div className="relative z-10 flex h-[360px] w-full items-center justify-center pb-12 lg:hidden">
+        <HeroVisual reduceMotion={!!reduceMotion} />
       </div>
     </section>
   );

@@ -62,12 +62,8 @@
   animation: grid-drift-b 34s linear infinite;
 }
 
-/* Hero glyph: outer spin + inner counter-rotation */
-.hero-visual-spin {
-  animation: hero-visual-spin 56s linear infinite;
-}
-
-@keyframes hero-visual-spin {
+/* hero-conic-wash used in LandingHero backdrop */
+@keyframes hero-conic-wash {
   to {
     transform: rotate(360deg);
   }
