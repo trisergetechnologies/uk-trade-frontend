@@ -1,32 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-
-type Income = {
-  id: number;
-  user: string;
-  amount: number;
-  date: string;
-};
-
-const data: Income[] = [
-  { id: 1, user: "Rohit", amount: 1000, date: "2026-04-15" },
-  { id: 2, user: "Suresh", amount: 1500, date: "2026-04-14" },
-  { id: 3, user: "Aman", amount: 800, date: "2026-04-13" },
-];
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { getIncomeSponsor, type SponsorIncomeRow } from "@/lib/api";
+import { formatInr } from "@/lib/formatInr";
 
 export default function SponsorIncome() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [rows, setRows] = useState<SponsorIncomeRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = data.filter((item) => {
-    return (
-      item.user.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getIncomeSponsor();
+        if (cancelled) return;
+        setRows(res.data || []);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load sponsor income.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const total = filtered.reduce((sum, item) => sum + item.amount, 0);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startWeek = startToday - 6 * 24 * 60 * 60 * 1000;
+
+    return rows.filter((row) => {
+      const createdTs = row.createdAt ? new Date(row.createdAt).getTime() : 0;
+      if (filter === "Today" && createdTs < startToday) return false;
+      if (filter === "This Week" && createdTs < startWeek) return false;
+      const hay = JSON.stringify(row).toLowerCase();
+      if (q && !hay.includes(q)) return false;
+      return true;
+    });
+  }, [rows, filter, search]);
+
+  const total = filtered.reduce((sum, item) => sum + (Number(item.creditedAmount) || 0), 0);
 
   return (
     <div className="min-h-screen bg-[#03050a] text-white p-6">
@@ -35,18 +60,26 @@ export default function SponsorIncome() {
 
         {/* HEADER */}
         <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
             Sponsor Income
           </h2>
           <p className="text-slate-400 text-sm mt-1">
             Earnings from your direct referrals
           </p>
+          {error && <p className="text-amber-400 text-sm mt-2">{error}</p>}
         </div>
 
         {/* SUMMARY */}
         <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-green-600/80 to-emerald-600/80 border border-white/10 shadow-[0_0_25px_rgba(16,185,129,0.4)]">
           <p className="text-sm text-slate-300">Total Sponsor Income</p>
-          <h1 className="text-3xl font-bold mt-1">₹{total}</h1>
+          <h1 className="text-3xl font-bold mt-1">{loading ? "…" : formatInr(total)}</h1>
         </div>
 
         {/* CONTROLS */}
@@ -70,7 +103,7 @@ export default function SponsorIncome() {
           {/* SEARCH */}
           <input
             type="text"
-            placeholder="Search user..."
+            placeholder="Search sponsor events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="ml-auto px-3 py-1.5 rounded-lg bg-[#050816] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none"
@@ -89,25 +122,25 @@ export default function SponsorIncome() {
             </thead>
 
             <tbody>
-              {filtered.map((item) => (
+              {filtered.map((item, idx) => (
                 <motion.tr
-                  key={item.id}
+                  key={`${item.createdAt || "row"}-${idx}`}
                   whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
                   className="border-b border-white/5"
                 >
                   {/* USER */}
                   <td className="px-4 py-3 font-medium text-white">
-                    {item.user}
+                    Sponsor event
                   </td>
 
                   {/* AMOUNT */}
                   <td className="px-4 font-semibold text-green-400">
-                    ₹{item.amount}
+                    {formatInr(Number(item.creditedAmount) || 0)}
                   </td>
 
                   {/* DATE */}
                   <td className="px-4 text-slate-400">
-                    {new Date(item.date).toLocaleDateString()}
+                    {item.createdAt ? new Date(item.createdAt).toLocaleString() : "-"}
                   </td>
                 </motion.tr>
               ))}
@@ -115,7 +148,7 @@ export default function SponsorIncome() {
           </table>
 
           {/* EMPTY */}
-          {filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div className="text-center py-10 text-slate-500">
               No sponsor income found
             </div>

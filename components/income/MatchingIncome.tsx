@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getIncomeMatching, type MatchingIncomeRow } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
 
@@ -10,6 +12,7 @@ function rowAmount(row: MatchingIncomeRow): number {
 }
 
 export default function MatchingIncome() {
+  const router = useRouter();
   const [filter, setFilter] = useState("All");
   const [rows, setRows] = useState<MatchingIncomeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +66,13 @@ export default function MatchingIncome() {
 
         {/* HEADER */}
         <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
             Matching Income
           </h2>
