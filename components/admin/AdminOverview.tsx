@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Users, WalletCards, BadgeIndianRupee, Clock3, Package, Layers3 } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getAdminOverview, type AdminOverviewDto } from "@/lib/api";
+import { formatInr } from "@/lib/formatInr";
 
 const CARD_CLASS = "rounded-xl border border-white/10 bg-white/[0.03] p-4";
 
@@ -43,6 +44,12 @@ export default function AdminOverview() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Layers3 size={14} />Active plans configured</p><p className="text-xl text-white font-semibold">{t.totalPlans}</p></div>
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Package size={14} />Packages configured</p><p className="text-xl text-white font-semibold">{t.totalPackages}</p></div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={CARD_CLASS}><p className="text-xs text-slate-500">Trade income (total)</p><p className="text-xl text-white font-semibold">{formatInr(t.tradeIncomeTotal || 0)}</p></div>
+        <div className={CARD_CLASS}><p className="text-xs text-slate-500">Sponsor income (total)</p><p className="text-xl text-white font-semibold">{formatInr(t.sponsorIncomeTotal || 0)}</p></div>
+        <div className={CARD_CLASS}><p className="text-xs text-slate-500">Matching income (total)</p><p className="text-xl text-white font-semibold">{formatInr(t.matchingIncomeTotal || 0)}</p></div>
+        <div className={CARD_CLASS}><p className="text-xs text-slate-500">Platform income total</p><p className="text-xl text-white font-semibold">{formatInr(t.totalIncome || 0)}</p></div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 h-[330px]">
         <p className="text-sm text-white font-medium mb-1">14-day operation trend</p>

@@ -181,6 +181,10 @@ export type AdminOverviewDto = {
     pendingWithdrawals: number;
     totalPlans: number;
     totalPackages: number;
+    tradeIncomeTotal: number;
+    sponsorIncomeTotal: number;
+    matchingIncomeTotal: number;
+    totalIncome: number;
   };
   series: Array<{ day: string; fundRequestsAmount: number; purchaseAmount: number; approvedWithdrawalsOut: number }>;
 };
@@ -525,8 +529,14 @@ export type TradeCreditRow = {
 
 export type SponsorIncomeRow = { creditedAmount: number; createdAt?: string };
 
-/** Row shape TBD when matching is implemented; supports optional amount + date. */
-export type MatchingIncomeRow = { amount?: number; createdAt?: string; creditDateIst?: string };
+export type MatchingIncomeRow = {
+  amount?: number;
+  creditedAmount?: number;
+  payoutCreditedAmount?: number;
+  status?: 'credited' | 'skipped' | 'duplicate';
+  createdAt?: string;
+  creditDateIst?: string;
+};
 
 export async function getIncomeTrade(): Promise<ApiSuccess<TradeCreditRow[]>> {
   return apiFetch('/api/income/trade');

@@ -1,17 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { getIncomeMatching, type MatchingIncomeRow } from "@/lib/api";
+import { formatInr } from "@/lib/formatInr";
 
-const data = [
-  { id: 1, user: "Rahul", amount: 500, left: 250, right: 250, date: "2026-04-15" },
-  { id: 2, user: "Amit", amount: 700, left: 350, right: 350, date: "2026-04-14" },
-];
+function rowAmount(row: MatchingIncomeRow): number {
+  return Number(row.payoutCreditedAmount ?? row.creditedAmount ?? row.amount ?? 0) || 0;
+}
 
 export default function MatchingIncome() {
   const [filter, setFilter] = useState("All");
+  const [rows, setRows] = useState<MatchingIncomeRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getIncomeMatching();
+        if (cancelled) return;
+        setRows(res.data || []);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load matching income.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const visibleRows = useMemo(() => {
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startWeek = startToday - 6 * 24 * 60 * 60 * 1000;
+    if (filter === "Today") {
+      return rows.filter((r) => {
+        const t = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+        return t >= startToday;
+      });
+    }
+    if (filter === "This Week") {
+      return rows.filter((r) => {
+        const t = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+        return t >= startWeek;
+      });
+    }
+    return rows;
+  }, [filter, rows]);
+
+  const total = visibleRows.reduce((sum, item) => sum + rowAmount(item), 0);
 
   return (
     <div className="min-h-screen bg-[#03050a] text-white p-6">
@@ -26,12 +69,13 @@ export default function MatchingIncome() {
           <p className="text-slate-400 text-sm mt-1">
             Earnings from binary pairing (Left vs Right)
           </p>
+          {error && <p className="text-amber-400 text-sm mt-2">{error}</p>}
         </div>
 
         {/* SUMMARY */}
         <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-600/80 to-indigo-600/80 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(59,130,246,0.4)]">
-          <p className="text-sm text-slate-300">Total Matching Income</p>
-          <h1 className="text-3xl font-bold mt-1">₹{total}</h1>
+          <p className="text-sm text-slate-300">Total Matching Income ({filter})</p>
+          <h1 className="text-3xl font-bold mt-1">{loading ? "…" : formatInr(total)}</h1>
         </div>
 
         {/* FILTERS */}
@@ -64,32 +108,30 @@ export default function MatchingIncome() {
             </thead>
 
             <tbody>
-              {data.map((item) => (
+              {visibleRows.map((item, idx) => (
                 <motion.tr
-                  key={item.id}
+                  key={`${item.createdAt || item.creditDateIst || "row"}-${idx}`}
                   whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
                   className="border-b border-white/5"
                 >
                   {/* USER */}
                   <td className="px-4 py-3 font-medium text-white">
-                    {item.user}
+                    {item.status || "credited"}
                   </td>
 
                   {/* PAIR */}
                   <td className="px-4 text-xs text-slate-300">
-                    <span className="text-green-400">{item.left}</span>
-                    {" : "}
-                    <span className="text-blue-400">{item.right}</span>
+                    <span className="text-slate-400">—</span>
                   </td>
 
                   {/* AMOUNT */}
                   <td className="px-4 font-semibold text-green-400">
-                    ₹{item.amount}
+                    {formatInr(rowAmount(item))}
                   </td>
 
                   {/* DATE */}
                   <td className="px-4 text-slate-400">
-                    {new Date(item.date).toLocaleDateString()}
+                    {item.createdAt ? new Date(item.createdAt).toLocaleString() : "-"}
                   </td>
                 </motion.tr>
               ))}
@@ -97,7 +139,7 @@ export default function MatchingIncome() {
           </table>
 
           {/* EMPTY */}
-          {data.length === 0 && (
+          {!loading && visibleRows.length === 0 && (
             <div className="text-center py-10 text-slate-500">
               No matching income found
             </div>

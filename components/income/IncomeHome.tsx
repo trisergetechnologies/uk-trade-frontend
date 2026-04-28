@@ -37,7 +37,10 @@ export default function IncomeHome() {
 
   const tradeTotal = tradeRows.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
   const sponsorTotal = sponsorRows.reduce((acc, r) => acc + (Number(r.creditedAmount) || 0), 0);
-  const matchingTotal = matchingRows.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+  const matchingTotal = matchingRows.reduce(
+    (acc, r) => acc + (Number(r.payoutCreditedAmount ?? r.creditedAmount ?? r.amount) || 0),
+    0
+  );
   const total = tradeTotal + sponsorTotal + matchingTotal;
   const latestDate = [
     ...tradeRows.map((r) => r.createdAt || r.creditDateIst || ""),
