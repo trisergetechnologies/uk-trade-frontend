@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     template: "%s | UK Trade",
   },
   description: "UK Trade platform",
+  icons: {
+    icon: [{ url: "/logo.png", type: "image/png", sizes: "any" }],
+    apple: "/logo.png",
+    shortcut: "/logo.png",
+  },
 };
 
 export default function RootLayout({

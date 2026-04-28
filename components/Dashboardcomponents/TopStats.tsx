@@ -63,8 +63,7 @@ export default function TopStats() {
   if (error) {
     return (
       <p className="text-sm text-amber-400/90">
-        Dashboard stats: {error}. Sign in and ensure the API gateway is running (
-        <code className="text-xs">NEXT_PUBLIC_API_BASE</code>).
+        We couldn&apos;t load your stats right now. Please refresh the page or try again in a moment.
       </p>
     );
   }

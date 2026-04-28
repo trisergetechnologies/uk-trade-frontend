@@ -2,23 +2,21 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import {
-  Menu,
-  X,
-  ChevronDown,
-  TrendingUp,
-  Users,
-  Award,
-  Gift,
-  LogIn,
-  Sparkles,
-  BarChart3,
-} from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
+import SiteLogo from "@/components/brand/SiteLogo";
+import { useClientSession } from "@/hooks/useClientSession";
+
+const NAV = [
+  { label: "About", href: "/#about" },
+  { label: "Features", href: "/#features" },
+  { label: "Plans", href: "/#plans" },
+  { label: "Team", href: "/#team" },
+] as const;
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { hydrated, isLoggedIn, dashboardPath } = useClientSession();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -36,109 +34,74 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
-
-          {/* LOGO */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 blur-md opacity-60 group-hover:opacity-100 transition" />
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-            </div>
-
-            <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              MLM<span className="text-blue-500">Pro</span>
+          <Link href="/" className="group flex items-center gap-2">
+            <span className="relative rounded-lg ring-1 ring-white/10 transition group-hover:ring-purple-500/40">
+              <SiteLogo variant="navbar" priority />
+            </span>
+            <span className="hidden text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent sm:inline">
+              UK <span className="text-blue-500">Trade</span>
             </span>
           </Link>
 
-          {/* NAV LINKS */}
-          <nav className="hidden lg:flex items-center gap-2">
-
-            {/* FEATURES */}
-            <div
-              className="relative"
-              onMouseEnter={() => setIsFeaturesOpen(true)}
-              onMouseLeave={() => setIsFeaturesOpen(false)}
-            >
-              <button className="flex items-center gap-1 px-4 py-2 text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition">
-                Features
-                <ChevronDown
-                  className={`w-4 h-4 transition ${
-                    isFeaturesOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isFeaturesOpen && (
-                <div className="absolute left-0 mt-3 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
-                  {[
-                    { icon: TrendingUp, title: "Commission Tracker", desc: "Track earnings live" },
-                    { icon: Users, title: "Team Management", desc: "Manage your network" },
-                    { icon: Award, title: "Rank System", desc: "Gamified progress" },
-                    { icon: Gift, title: "Bonuses", desc: "Rewards & incentives" },
-                    { icon: BarChart3, title: "Analytics", desc: "Advanced dashboard" },
-                  ].map((item, i) => (
-                    <Link
-                      key={i}
-                      href="#"
-                      className="flex gap-3 p-3 rounded-xl hover:bg-white/5 transition"
-                    >
-                      <item.icon className="w-5 h-5 text-blue-400 mt-0.5" />
-                      <div>
-                        <p className="text-white font-medium">{item.title}</p>
-                        <p className="text-xs text-gray-400">{item.desc}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {["Pricing", "Success", "Resources", "Help"].map((item) => (
+          <nav className="hidden lg:flex items-center gap-1">
+            {NAV.map((item) => (
               <Link
-                key={item}
-                href="#"
+                key={item.href}
+                href={item.href}
                 className="px-4 py-2 text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition"
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </nav>
 
-          {/* CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition flex items-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              Login
-            </Link>
+            {hydrated && isLoggedIn ? (
+              <Link
+                href={dashboardPath}
+                className="relative flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 transition hover:brightness-110 shadow-lg shadow-purple-500/25"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition flex items-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </Link>
 
-            <Link
-              href="/register"
-              className="relative px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105 transition shadow-lg shadow-purple-500/20"
-            >
-              Get Started
-            </Link>
+                <Link
+                  href="/register"
+                  className="relative px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 transition hover:brightness-110 shadow-lg shadow-purple-500/25"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* MOBILE BUTTON */}
           <button
+            type="button"
             onClick={() => setIsMobileMenuOpen(true)}
             className="lg:hidden p-2 rounded-xl bg-white/10 border border-white/10"
+            aria-expanded={isMobileMenuOpen}
+            aria-label="Open menu"
           >
             <Menu className="text-white w-5 h-5" />
           </button>
         </div>
       </div>
 
-      {/* MOBILE MENU */}
       <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition ${
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden
       />
 
       <div
@@ -148,37 +111,51 @@ const Navbar = () => {
       >
         <div className="p-6 flex justify-between items-center border-b border-white/10">
           <span className="text-white font-bold text-lg">Menu</span>
-          <button onClick={() => setIsMobileMenuOpen(false)}>
+          <button type="button" onClick={() => setIsMobileMenuOpen(false)} aria-label="Close menu">
             <X className="text-white" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          {["Features", "Pricing", "Success", "Resources", "Help"].map((item) => (
+          {NAV.map((item) => (
             <Link
-              key={item}
-              href="#"
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
               className="block text-gray-300 hover:text-white transition"
             >
-              {item}
+              {item.label}
             </Link>
           ))}
           <div className="pt-4 border-t border-white/10 space-y-3">
-            <Link
-              href="/login"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-2 text-gray-300 hover:text-white transition"
-            >
-              <LogIn className="w-4 h-4" />
-              Login
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-center rounded-xl py-3 font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600"
-            >
-              Get Started
-            </Link>
+            {hydrated && isLoggedIn ? (
+              <Link
+                href={dashboardPath}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl py-3 font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-gray-300 hover:text-white transition"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-center rounded-xl py-3 font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -97,12 +97,6 @@ function LoginForm() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-gray-500">
-          Ensure the API gateway is running and{" "}
-          <code className="text-gray-400">NEXT_PUBLIC_API_BASE</code> points to it (e.g.{" "}
-          <code className="text-gray-400">http://localhost:5000</code>).
-        </p>
       </div>
       <Link href="/" className="mt-8 text-sm text-gray-400 hover:text-white">
         ← Back to home

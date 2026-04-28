@@ -2,6 +2,14 @@ import { AUTH_COOKIE_MAX_AGE, AUTH_TOKEN_COOKIE } from '@/lib/auth.constants';
 
 const LEGACY_STORAGE_KEY = 'uk_trade_token';
 
+/** Fired on same-tab login/logout so UI (navbar, hero) can refresh without reload. */
+export const AUTH_CHANGE_EVENT = 'uk-trade-auth-change';
+
+function notifyAuthChange() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT));
+}
+
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[$()*+.?[\\\]^{|}]/g, '\\$&')}=([^;]*)`));
@@ -36,6 +44,7 @@ export function setAuthToken(token: string) {
   ];
   if (secure) parts.push('Secure');
   document.cookie = parts.join('; ');
+  notifyAuthChange();
 }
 
 export function clearAuthToken() {
@@ -46,6 +55,7 @@ export function clearAuthToken() {
     /* ignore */
   }
   document.cookie = `${AUTH_TOKEN_COOKIE}=; Path=/; Max-Age=0`;
+  notifyAuthChange();
 }
 
 export function dashboardPathForRole(role: string) {
