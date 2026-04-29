@@ -1,11 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
+import HeroMeshCanvas from "@/components/landing/HeroMeshCanvas";
 
 /** Background layers — toned down to avoid layout shift / scroll jank. */
 export default function HeroBackdrop({ reduceMotion }: { reduceMotion: boolean }) {
   return (
     <>
+      <HeroMeshCanvas reduceMotion={reduceMotion} />
+
       <motion.div
         className="pointer-events-none absolute left-1/2 top-1/2 h-[min(120vmin,780px)] w-[min(120vmin,780px)] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-35"
         style={{

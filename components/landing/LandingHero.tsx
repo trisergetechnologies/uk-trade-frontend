@@ -33,6 +33,15 @@ const PARTICLES = [
   { x: 50, y: 60, s: 1.5, dur: 10, dy: 10,  delay: 0.9 },
 ] as const;
 
+const SECTION_ORBS = [
+  { x: 8, y: 18, size: 10, dur: 17, dx: 24, dy: -18, delay: 0.4 },
+  { x: 24, y: 72, size: 8, dur: 15, dx: -18, dy: 20, delay: 1.2 },
+  { x: 46, y: 14, size: 9, dur: 19, dx: 16, dy: 14, delay: 0.9 },
+  { x: 70, y: 30, size: 11, dur: 16, dx: -22, dy: -10, delay: 2.2 },
+  { x: 88, y: 64, size: 9, dur: 18, dx: 20, dy: 12, delay: 1.7 },
+  { x: 58, y: 88, size: 8, dur: 14, dx: -14, dy: -16, delay: 2.8 },
+] as const;
+
 export default function LandingHero() {
   const reduceMotion = useReducedMotion();
   const { scrollY } = useScroll();
@@ -77,6 +86,21 @@ export default function LandingHero() {
       {/* ── LAYER 1 — floating particles across the whole section ── */}
       {!reduceMotion && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {SECTION_ORBS.map((p, i) => (
+            <motion.div
+              key={`orb-${i}`}
+              className="absolute rounded-full bg-purple-300/35 blur-[2px]"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                boxShadow: "0 0 26px rgba(167,139,250,0.35)",
+              }}
+              animate={{ x: [0, p.dx, 0], y: [0, p.dy, 0], opacity: [0.28, 0.75, 0.28] }}
+              transition={{ duration: p.dur, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+            />
+          ))}
           {PARTICLES.map((p, i) => (
             <motion.div
               key={i}

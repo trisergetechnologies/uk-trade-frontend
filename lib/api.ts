@@ -214,6 +214,25 @@ export async function postAdminPlan(body: {
   return apiFetch('/api/admin/plans', { method: 'POST', body: JSON.stringify(body) });
 }
 
+export async function patchAdminPlan(
+  code: string,
+  body: {
+    name?: string;
+    dailyPercent?: number;
+    cycleDaysW?: number;
+    maxWorkingDaysN?: number;
+    sponsorPercent?: number;
+    summary?: string;
+    detailHelp?: string;
+    isActive?: boolean;
+  }
+): Promise<ApiSuccess<AdminPlanRow>> {
+  return apiFetch(`/api/admin/plans/${encodeURIComponent(code)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getAdminPackageProducts(): Promise<ApiSuccess<AdminPackageProductRow[]>> {
   return apiFetch('/api/admin/package-products');
 }
@@ -229,6 +248,24 @@ export async function postAdminPackageProduct(body: {
   isActive?: boolean;
 }): Promise<ApiSuccess<AdminPackageProductRow>> {
   return apiFetch('/api/admin/package-products', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function patchAdminPackageProduct(
+  code: string,
+  body: {
+    name?: string;
+    amount?: number;
+    shortDescription?: string;
+    detailHelp?: string;
+    features?: string[];
+    sortOrder?: number;
+    isActive?: boolean;
+  }
+): Promise<ApiSuccess<AdminPackageProductRow>> {
+  return apiFetch(`/api/admin/package-products/${encodeURIComponent(code)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 }
 
 export type AdminUserRow = {
