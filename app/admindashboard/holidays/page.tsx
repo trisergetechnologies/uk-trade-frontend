@@ -108,8 +108,8 @@ export default function AdminHolidaysPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full text-left text-sm text-slate-300">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-2xl border border-white/10 bg-white/[0.03]">
+        <table className="w-full min-w-[640px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3">Date (IST)</th>
@@ -149,7 +149,7 @@ export default function AdminHolidaysPage() {
       </div>
 
       {meta && meta.total > 0 && (
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-400">
           <span>
             Page {meta.page} / {totalPages}
           </span>

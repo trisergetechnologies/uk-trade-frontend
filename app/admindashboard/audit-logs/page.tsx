@@ -32,8 +32,8 @@ export default function AdminAuditLogsPage() {
         <p className="text-sm text-slate-400">Trace who did what and when in admin actions.</p>
       </div>
       {error && <p className="text-red-400 text-sm">{error}</p>}
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[760px] text-sm text-slate-300">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
+        <table className="w-full min-w-[760px] text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
             <tr><th className="px-4 py-3 text-left">When</th><th className="px-4 py-3 text-left">Action</th><th className="px-4 py-3 text-left">Actor</th><th className="px-4 py-3 text-left">Target</th></tr>
           </thead>
@@ -51,7 +51,7 @@ export default function AdminAuditLogsPage() {
         </table>
       </div>
       {meta && (
-        <div className="flex justify-between text-sm text-slate-400">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-400">
           <p>Page {meta.page} of {meta.totalPages} · {meta.total} logs</p>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded border border-white/10 px-3 py-1 disabled:opacity-50">Prev</button>

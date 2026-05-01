@@ -1,10 +1,14 @@
 "use client";
 
-import { User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAuthMe, type AuthUser } from "@/lib/api";
 
-export default function DashboardNavbar() {
+type DashboardNavbarProps = {
+  onMenuClick?: () => void;
+};
+
+export default function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -30,7 +34,7 @@ export default function DashboardNavbar() {
     <header
       className="
         relative
-        h-20 flex items-center justify-between px-8
+        min-h-20 flex items-center justify-between px-3 py-3 md:h-20 md:px-8
         bg-[#0B0F19]/80
         backdrop-blur-xl
         border-b border-white/10
@@ -43,18 +47,28 @@ export default function DashboardNavbar() {
         <div className="absolute right-0 top-0 w-[300px] h-[200px] bg-purple-500/10 blur-[100px]" />
       </div>
 
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-white tracking-tight">Dashboard</h1>
+      <div className="flex items-center gap-2 md:gap-4 min-w-0">
+        {onMenuClick && (
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 p-2 text-white md:hidden"
+            aria-label="Open dashboard menu"
+          >
+            <Menu size={18} />
+          </button>
+        )}
+        <h1 className="text-lg md:text-xl font-semibold text-white tracking-tight">Dashboard</h1>
         <span className="hidden md:block text-sm text-slate-400">Welcome back 👋</span>
       </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-2 md:gap-5">
         <div className="hidden md:block h-8 w-px bg-white/10" />
 
         <div
           className="
             flex items-center gap-3
-            px-3 py-2 rounded-2xl
+            px-2 py-2 md:px-3 rounded-2xl
             bg-white/5 border border-white/10
           "
         >

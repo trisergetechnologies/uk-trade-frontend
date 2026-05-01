@@ -31,7 +31,7 @@ export default function MemberTree() {
   const totalPages = meta?.totalPages ?? 1;
 
   return (
-    <div className="min-h-screen bg-[#02040a] text-white p-6 overflow-auto">
+    <div className="min-h-screen bg-[#02040a] text-white p-3 md:p-6 overflow-auto">
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold text-indigo-400">Network tree</h1>
         <p className="text-gray-400 text-sm">Your node and downline (paginated).</p>
@@ -49,7 +49,7 @@ export default function MemberTree() {
 
       {data && (
         <div className="max-w-5xl mx-auto space-y-6">
-          <div className="rounded-xl border border-white/10 bg-[#050816] p-6">
+          <div className="rounded-xl border border-white/10 bg-[#050816] p-4 md:p-6">
             <h2 className="text-lg font-semibold text-white mb-2">Your node</h2>
             {data.myNode ? (
               <dl className="grid grid-cols-2 gap-2 text-sm text-slate-300">
@@ -69,7 +69,7 @@ export default function MemberTree() {
             )}
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#050816] p-6 overflow-x-auto">
+          <div className="rounded-xl border border-white/10 bg-[#050816] p-4 md:p-6 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-white">Downline</h2>
               {meta && meta.total > 0 && (
@@ -96,7 +96,7 @@ export default function MemberTree() {
                 </div>
               )}
             </div>
-            <table className="w-full text-left text-sm text-slate-300">
+            <table className="w-full min-w-[640px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
               <thead>
                 <tr className="border-b border-white/10 text-slate-500">
                   <th className="py-2 pr-4">User</th>

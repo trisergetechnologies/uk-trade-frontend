@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
             Deactivate means user cannot login and cannot perform new actions; historical data remains intact.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full md:w-auto items-center gap-2 flex-wrap">
           <input
             value={q}
             onChange={(e) => {
@@ -67,7 +67,7 @@ export default function AdminUsersPage() {
               setQ(e.target.value);
             }}
             placeholder="Search name, email, user code"
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
           />
           <select
             value={status}
@@ -75,7 +75,7 @@ export default function AdminUsersPage() {
               setPage(1);
               setStatus(e.target.value as "" | "active" | "inactive");
             }}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -84,8 +84,8 @@ export default function AdminUsersPage() {
         </div>
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[760px] text-sm text-slate-300">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
+        <table className="w-full min-w-[760px] text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="text-xs uppercase text-slate-500 border-b border-white/10">
             <tr><th className="px-4 py-3 text-left">User</th><th className="px-4 py-3 text-left">Email</th><th className="px-4 py-3 text-left">Role</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Actions</th></tr>
           </thead>
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
         </table>
       </div>
       {meta && (
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-400">
           <p>Page {meta.page} of {meta.totalPages} · {meta.total} users</p>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded border border-white/10 px-3 py-1 disabled:opacity-50">Prev</button>

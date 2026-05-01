@@ -60,7 +60,7 @@ export default function MatchingIncome() {
   const total = visibleRows.reduce((sum, item) => sum + rowAmount(item), 0);
 
   return (
-    <div className="min-h-screen bg-[#03050a] text-white p-6">
+    <div className="min-h-screen bg-[#03050a] text-white p-3 md:p-6">
 
       <div className="max-w-6xl mx-auto">
 
@@ -83,7 +83,7 @@ export default function MatchingIncome() {
         </div>
 
         {/* SUMMARY */}
-        <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-600/80 to-indigo-600/80 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(59,130,246,0.4)]">
+        <div className="mb-8 p-4 md:p-6 rounded-2xl bg-gradient-to-r from-blue-600/80 to-indigo-600/80 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(59,130,246,0.4)]">
           <p className="text-sm text-slate-300">Total Matching Income ({filter})</p>
           <h1 className="text-3xl font-bold mt-1">{loading ? "…" : formatInr(total)}</h1>
         </div>
@@ -106,8 +106,8 @@ export default function MatchingIncome() {
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#050816]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-[#050816]">
+          <table className="w-full min-w-[700px] text-sm whitespace-nowrap md:whitespace-normal">
             <thead className="text-slate-400 text-xs uppercase border-b border-white/10">
               <tr>
                 <th className="py-3 px-4 text-left">User</th>

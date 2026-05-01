@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { type MouseEventHandler } from "react";
 
 /* =========================
    TYPES (Reusable)
@@ -101,11 +102,16 @@ const useActiveRoute = () => {
 /* =========================
    COMPONENT
 ========================= */
-export default function Sidebar() {
+type SidebarProps = {
+  className?: string;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement>;
+};
+
+export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
   const { isActive } = useActiveRoute();
 
   return (
-    <aside className="w-64 h-screen bg-[#060A14] text-slate-300 flex flex-col border-r border-white/5">
+    <aside className={`flex w-64 h-screen bg-[#060A14] text-slate-300 flex-col border-r border-white/5 ${className}`}>
 
       {/* ---------- LOGO ---------- */}
       <div className="px-5 py-5 border-b border-white/5">
@@ -135,6 +141,7 @@ export default function Sidebar() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={onNavigate}
                     className={`relative group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-300
                       
                       ${

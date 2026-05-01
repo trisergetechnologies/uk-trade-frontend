@@ -55,7 +55,7 @@ export default function UserTransferHistory() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-white p-6">
+    <div className="min-h-screen bg-[#05070d] text-white p-3 md:p-6">
       <div className="max-w-5xl mx-auto mb-8 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Transfer History</h1>
@@ -83,7 +83,7 @@ export default function UserTransferHistory() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mb-4 flex items-center gap-2">
+      <div className="max-w-5xl mx-auto mb-4 flex flex-wrap items-center gap-2">
         {(["all", "sent", "received"] as FundTransferType[]).map((tab) => (
           <button
             key={tab}
@@ -134,7 +134,7 @@ export default function UserTransferHistory() {
         />
       </div>
 
-      <div className="max-w-5xl mx-auto mb-4 flex items-center gap-2">
+      <div className="max-w-5xl mx-auto mb-4 flex flex-wrap items-center gap-2">
         <button
           onClick={() => {
             setPage(1);
@@ -159,8 +159,8 @@ export default function UserTransferHistory() {
       </div>
 
       <div className="max-w-5xl mx-auto rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
-        <div className="bg-[#0b0f1a]/90 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden">
-          <div className="grid grid-cols-6 px-6 py-4 text-sm text-slate-400 border-b border-white/10">
+        <div className="bg-[#0b0f1a]/90 backdrop-blur-xl rounded-3xl border border-white/10 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+          <div className="grid min-w-[860px] grid-cols-6 px-4 md:px-6 py-4 text-sm text-slate-400 border-b border-white/10 whitespace-nowrap">
             <span>Transfer ID</span>
             <span>Type</span>
             <span>User ID</span>
@@ -171,7 +171,7 @@ export default function UserTransferHistory() {
           <div className="divide-y divide-white/5">
             {!loading &&
               rows.map((item) => (
-                <div key={item.id} className="grid grid-cols-6 px-6 py-4 items-center hover:bg-white/5 transition text-sm">
+                <div key={item.id} className="grid min-w-[860px] grid-cols-6 px-4 md:px-6 py-4 items-center hover:bg-white/5 transition text-sm whitespace-nowrap">
                   <div className="min-w-0">
                     <span className="text-slate-300 block truncate">{item.id}</span>
                     {item.note ? <span className="text-[11px] text-slate-500 block truncate">{item.note}</span> : null}
@@ -211,7 +211,7 @@ export default function UserTransferHistory() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mt-4 flex items-center justify-end gap-2">
+      <div className="max-w-5xl mx-auto mt-4 flex flex-wrap items-center justify-end gap-2">
         <span className="text-xs text-slate-400 mr-2">
           Page {meta?.page || 1} of {meta?.totalPages || 1}
         </span>

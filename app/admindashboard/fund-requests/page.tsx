@@ -142,7 +142,7 @@ export default function AdminFundRequestsPage() {
         <h1 className="text-2xl font-semibold text-white">Payment requests</h1>
         <p className="text-sm text-slate-400 mt-1">Pending and past add-fund submissions (paginated).</p>
         <div className="flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+          <div className="inline-flex w-full sm:w-auto items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
             <SlidersHorizontal size={14} className="text-slate-400" />
             <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value as "" | "pending" | "approved" | "rejected"); }} className="bg-transparent text-sm text-white outline-none">
               <option value="">All status</option>
@@ -151,19 +151,19 @@ export default function AdminFundRequestsPage() {
               <option value="rejected">Rejected</option>
             </select>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+          <div className="inline-flex w-full sm:w-auto items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
             <Search size={14} className="text-slate-400" />
-            <input value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} placeholder="Search id, note, reason" className="bg-transparent text-sm text-white outline-none" />
+            <input value={q} onChange={(e) => { setPage(1); setQ(e.target.value); }} placeholder="Search id, note, reason" className="w-full bg-transparent text-sm text-white outline-none" />
           </div>
-          <input value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
-          <input value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} type="date" className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} type="date" className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
         </div>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[800px] text-left text-sm text-slate-300">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
+        <table className="w-full min-w-[800px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">When</th>

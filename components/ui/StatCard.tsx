@@ -28,7 +28,7 @@ export default function MLMStatCard({
       transition={{ type: "spring", stiffness: 120 }}
       className={`
         relative group
-        rounded-3xl p-7
+        rounded-3xl p-4 md:p-7
         overflow-hidden
 
         bg-gradient-to-br from-[#0A0F1F] to-[#05070F]
@@ -55,7 +55,7 @@ export default function MLMStatCard({
             {title}
           </p>
 
-          <h2 className="text-4xl font-bold text-white mt-2">
+          <h2 className="text-2xl md:text-4xl font-bold text-white mt-2 break-words">
             {value}
           </h2>
         </div>

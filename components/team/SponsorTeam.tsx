@@ -51,7 +51,7 @@ export default function SponsorTeam() {
   const totalEarnings = members.reduce((acc, m) => acc + m.earnings, 0);
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-white p-6">
+    <div className="min-h-screen bg-[#05070d] text-white p-3 md:p-6">
 
       {/* ---------- HEADER ---------- */}
       <div className="max-w-7xl mx-auto mb-8">
@@ -116,10 +116,10 @@ export default function SponsorTeam() {
 
       {/* ---------- TABLE ---------- */}
       <div className="max-w-7xl mx-auto rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
-        <div className="bg-[#0b0f1a]/90 rounded-3xl border border-white/10 overflow-hidden">
+        <div className="bg-[#0b0f1a]/90 rounded-3xl border border-white/10 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
 
           {/* Head */}
-          <div className="grid grid-cols-5 px-6 py-4 text-sm text-slate-400 border-b border-white/10">
+          <div className="grid min-w-[760px] grid-cols-5 px-4 md:px-6 py-4 text-sm text-slate-400 border-b border-white/10 whitespace-nowrap">
             <span>Member</span>
             <span>Join Date</span>
             <span>Status</span>
@@ -135,7 +135,7 @@ export default function SponsorTeam() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="grid grid-cols-5 px-6 py-5 items-center hover:bg-white/5 transition"
+                className="grid min-w-[760px] grid-cols-5 px-4 md:px-6 py-5 items-center hover:bg-white/5 transition whitespace-nowrap"
               >
                 {/* Member */}
                 <div className="flex items-center gap-3">

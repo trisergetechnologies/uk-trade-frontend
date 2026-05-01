@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { type MouseEventHandler } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -26,7 +27,12 @@ const MENU = [
   { name: "General Settings", href: "/admindashboard/settings", icon: Settings2 },
 ];
 
-export default function AdminSidebar() {
+type AdminSidebarProps = {
+  className?: string;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement>;
+};
+
+export default function AdminSidebar({ className = "", onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -37,7 +43,7 @@ export default function AdminSidebar() {
   }
 
   return (
-    <aside className="w-72 h-screen bg-gradient-to-b from-[#070c19] to-[#060A14] text-slate-300 flex flex-col border-r border-white/10">
+    <aside className={`flex w-72 h-screen bg-gradient-to-b from-[#070c19] to-[#060A14] text-slate-300 flex-col border-r border-white/10 ${className}`}>
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-500/30">
@@ -59,6 +65,7 @@ export default function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={`group flex items-center justify-between px-3 py-2.5 rounded-xl border transition ${
                 active
                   ? "bg-indigo-600/20 border-indigo-500/40 text-white"

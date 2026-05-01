@@ -82,7 +82,7 @@ export default function IncomeHome() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#03050a] text-white p-6">
+    <div className="min-h-screen bg-[#03050a] text-white p-3 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-10">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -92,7 +92,7 @@ export default function IncomeHome() {
           {error && <p className="text-sm text-amber-400 mt-2">{error}</p>}
         </div>
 
-        <div className="mb-6 p-6 rounded-2xl bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
+        <div className="mb-6 p-4 md:p-6 rounded-2xl bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
           <p className="text-sm text-slate-300">Total Income (Trade + Sponsor + Matching)</p>
           <h1 className="text-3xl font-bold mt-1 text-white">
             {loading ? "…" : formatInr(total)}

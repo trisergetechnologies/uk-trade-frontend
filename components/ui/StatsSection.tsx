@@ -41,7 +41,7 @@ export default function StatsSection({
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
 
         <div className="space-y-1">
           <h2 className="text-lg font-semibold text-white tracking-tight">
@@ -67,7 +67,7 @@ export default function StatsSection({
       {/* Grid */}
       <div
         className={`
-          grid gap-6
+          grid gap-4 md:gap-6
           grid-cols-1
           sm:grid-cols-2
           ${gridCols[columns]}

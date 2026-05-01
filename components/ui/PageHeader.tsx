@@ -27,7 +27,7 @@ export default function PageHeader({
   return (
     <div
       className={`
-        w-full px-6 md:px-8 pt-6 pb-3
+        w-full px-3 md:px-8 pt-4 md:pt-6 pb-3
         ${sticky ? "sticky top-20 z-30 backdrop-blur-xl bg-[#060A14]/70" : ""}
       `}
     >
@@ -59,7 +59,7 @@ export default function PageHeader({
         className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
       >
         {/* 🔹 Left Section */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2 md:gap-3 min-w-0">
           {backHref && (
             <Link
               href={backHref}
@@ -70,7 +70,7 @@ export default function PageHeader({
           )}
 
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight break-words">
               {title}
             </h1>
 

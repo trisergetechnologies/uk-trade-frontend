@@ -89,14 +89,14 @@ export default function WithdrawHistory() {
   };
 
   return (
-    <section className="relative w-full py-16 px-4 flex justify-center">
+    <section className="relative w-full py-10 px-3 md:py-16 md:px-4 flex justify-center">
       <div className="absolute inset-0 bg-[#05070d]" />
       <div className="absolute w-[400px] h-[400px] bg-indigo-600 blur-[120px] opacity-20 top-[-100px] left-[-100px]" />
       <div className="absolute w-[300px] h-[300px] bg-purple-600 blur-[120px] opacity-20 bottom-[-100px] right-[-100px]" />
 
       <div className="relative w-full max-w-6xl rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
         <div className="bg-[#0b0f1a]/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_0_80px_rgba(99,102,241,0.15)] overflow-hidden">
-          <div className="px-8 pt-6 pb-2 flex flex-wrap items-center gap-2 text-sm">
+          <div className="px-4 pt-5 pb-2 md:px-8 md:pt-6 flex flex-wrap items-center gap-2 text-sm">
             <Link
               href="/userdashboard/withdraw"
               className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-slate-300 hover:bg-white/[0.06] hover:text-white"
@@ -112,7 +112,7 @@ export default function WithdrawHistory() {
               New Withdrawal Request
             </Link>
           </div>
-          <div className="p-8 border-b border-white/10">
+          <div className="p-4 md:p-8 border-b border-white/10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <h2 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -166,8 +166,8 @@ export default function WithdrawHistory() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="w-full min-w-[760px] text-sm whitespace-nowrap md:whitespace-normal">
               <thead className="text-slate-400 border-b border-white/10">
                 <tr>
                   <th className="text-left py-4 px-6">Amount</th>

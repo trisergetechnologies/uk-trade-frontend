@@ -119,18 +119,18 @@ export default function TeamVisualTree({ loading }: Props) {
           />
         </div>
 
-        <div className="flex items-center gap-2 md:col-span-2">
+        <div className="flex flex-wrap items-center gap-2 md:col-span-2">
           <button
             type="button"
             onClick={() => void loadWindow(search.trim())}
-            className="px-3 py-2.5 rounded-xl text-sm border border-indigo-400/30 bg-indigo-500/20 text-indigo-100"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm border border-indigo-400/30 bg-indigo-500/20 text-indigo-100"
           >
             Focus
           </button>
           <button
             type="button"
             onClick={() => void loadWindow()}
-            className="px-3 py-2.5 rounded-xl text-sm border border-emerald-400/30 bg-emerald-500/20 text-emerald-100"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm border border-emerald-400/30 bg-emerald-500/20 text-emerald-100"
           >
             Show My Context
           </button>
@@ -139,14 +139,14 @@ export default function TeamVisualTree({ loading }: Props) {
             onClick={() => {
               setSearch("");
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-white/10 bg-white/5 text-slate-300"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm border border-white/10 bg-white/5 text-slate-300"
           >
             Reset
           </button>
           <button
             type="button"
             onClick={() => void loadWindow(search.trim())}
-            className="px-3 py-2.5 rounded-xl text-sm border border-white/10 bg-white/5 text-slate-200"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm border border-white/10 bg-white/5 text-slate-200"
           >
             Reload
           </button>

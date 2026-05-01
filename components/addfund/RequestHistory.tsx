@@ -75,13 +75,13 @@ export default function RequestHistory() {
   const totalPages = meta?.totalPages ?? 1;
 
   return (
-    <section className="relative w-full py-16 px-4 flex justify-center">
+    <section className="relative w-full py-10 px-3 md:py-16 md:px-4 flex justify-center">
       <div className="absolute inset-0 bg-[#05070d]" />
       <div className="absolute w-[400px] h-[400px] bg-indigo-600 blur-[120px] opacity-20 top-[-100px] left-[-100px]" />
       <div className="absolute w-[300px] h-[300px] bg-purple-600 blur-[120px] opacity-20 bottom-[-100px] right-[-100px]" />
 
       <div className="relative w-full max-w-5xl rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
-        <div className="bg-[#0b0f1a]/90 backdrop-blur-2xl rounded-3xl p-10 border border-white/10 shadow-[0_0_80px_rgba(99,102,241,0.15)]">
+        <div className="bg-[#0b0f1a]/90 backdrop-blur-2xl rounded-3xl p-4 md:p-10 border border-white/10 shadow-[0_0_80px_rgba(99,102,241,0.15)]">
           <div className="mb-8 space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <Link
@@ -135,7 +135,7 @@ export default function RequestHistory() {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
               <p className="text-slate-400 text-xs">This page total</p>
               <p className="text-white font-semibold text-lg">{formatInr(total)}</p>

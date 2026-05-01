@@ -89,7 +89,7 @@ export default function AdminWithdrawalsPage() {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
-          <input value={query} onChange={(e) => { setPage(1); setQuery(e.target.value); }} placeholder="Search request id or note" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
+          <input value={query} onChange={(e) => { setPage(1); setQuery(e.target.value); }} placeholder="Search request id or note" className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
           <input value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
           <input value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} type="date" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" />
         </div>
@@ -97,8 +97,8 @@ export default function AdminWithdrawalsPage() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[640px] text-left text-sm text-slate-300">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
+        <table className="w-full min-w-[640px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">When</th>

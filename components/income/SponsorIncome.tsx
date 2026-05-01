@@ -54,7 +54,7 @@ export default function SponsorIncome() {
   const total = filtered.reduce((sum, item) => sum + (Number(item.creditedAmount) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#03050a] text-white p-6">
+    <div className="min-h-screen bg-[#03050a] text-white p-3 md:p-6">
 
       <div className="max-w-6xl mx-auto">
 
@@ -77,7 +77,7 @@ export default function SponsorIncome() {
         </div>
 
         {/* SUMMARY */}
-        <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-green-600/80 to-emerald-600/80 border border-white/10 shadow-[0_0_25px_rgba(16,185,129,0.4)]">
+        <div className="mb-8 p-4 md:p-6 rounded-2xl bg-gradient-to-r from-green-600/80 to-emerald-600/80 border border-white/10 shadow-[0_0_25px_rgba(16,185,129,0.4)]">
           <p className="text-sm text-slate-300">Total Sponsor Income</p>
           <h1 className="text-3xl font-bold mt-1">{loading ? "…" : formatInr(total)}</h1>
         </div>
@@ -106,13 +106,13 @@ export default function SponsorIncome() {
             placeholder="Search sponsor events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="ml-auto px-3 py-1.5 rounded-lg bg-[#050816] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="w-full sm:w-auto sm:ml-auto px-3 py-1.5 rounded-lg bg-[#050816] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none"
           />
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#050816]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-[#050816]">
+          <table className="w-full min-w-[640px] text-sm whitespace-nowrap md:whitespace-normal">
             <thead className="text-slate-400 text-xs uppercase border-b border-white/10">
               <tr>
                 <th className="py-3 px-4 text-left">User</th>

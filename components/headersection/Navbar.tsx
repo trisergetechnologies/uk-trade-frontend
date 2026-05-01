@@ -24,6 +24,14 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -32,7 +40,7 @@ const Navbar = () => {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="group flex items-center gap-2">
             <span className="relative rounded-lg ring-1 ring-white/10 transition group-hover:ring-purple-500/40">

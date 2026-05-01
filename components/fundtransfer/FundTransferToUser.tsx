@@ -70,7 +70,7 @@ export default function FundTransferToUser() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-white p-6">
+    <div className="min-h-screen bg-[#05070d] text-white p-3 md:p-6">
       <div className="max-w-3xl mx-auto mb-8 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Transfer to User</h1>
@@ -86,7 +86,7 @@ export default function FundTransferToUser() {
 
       <div className="max-w-3xl mx-auto">
         <div className="rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
-          <div className="bg-[#0b0f1a]/90 backdrop-blur-xl p-8 rounded-3xl border border-white/10">
+          <div className="bg-[#0b0f1a]/90 backdrop-blur-xl p-4 md:p-8 rounded-3xl border border-white/10">
             <h2 className="text-xl font-semibold mb-6">Transfer details</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>

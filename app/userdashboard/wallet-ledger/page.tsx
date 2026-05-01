@@ -35,7 +35,7 @@ export default function WalletLedgerPage() {
   const totalPages = meta?.totalPages ?? 1;
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-white px-4 py-10">
+    <div className="min-h-screen bg-[#05070d] text-white px-3 py-6 md:px-4 md:py-10">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-start gap-3">
           <FileText className="text-indigo-400 shrink-0 mt-1" size={28} />
@@ -47,8 +47,8 @@ export default function WalletLedgerPage() {
 
         {error && <p className="text-sm text-amber-400">{error}</p>}
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
-          <table className="w-full text-sm text-left">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+          <table className="w-full min-w-[640px] text-sm text-left whitespace-nowrap md:whitespace-normal">
             <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3">When</th>

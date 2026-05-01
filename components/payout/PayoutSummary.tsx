@@ -62,7 +62,7 @@ export default function PayoutSummary() {
   );
 
   return (
-    <div className="min-h-screen bg-[#03050a] text-white p-6">
+    <div className="min-h-screen bg-[#03050a] text-white p-3 md:p-6">
 
       <div className="max-w-6xl mx-auto">
 
@@ -126,13 +126,13 @@ export default function PayoutSummary() {
             placeholder="Search by request ID / amount / date..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="ml-auto px-3 py-1.5 rounded-lg bg-[#050816] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="w-full sm:w-auto sm:ml-auto px-3 py-1.5 rounded-lg bg-[#050816] border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none"
           />
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#050816]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-[#050816]">
+          <table className="w-full min-w-[680px] text-sm whitespace-nowrap md:whitespace-normal">
             <thead className="text-slate-400 text-xs uppercase border-b border-white/10">
               <tr>
                 <th className="py-3 px-4 text-left">Request ID</th>
