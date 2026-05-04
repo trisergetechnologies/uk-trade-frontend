@@ -10,14 +10,15 @@ import {
   BarChart3,
   HelpCircle,
   TrendingUp,
-  Sparkles,
   FileText,
   Package,
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type MouseEventHandler } from "react";
+import { clearAuthToken } from "@/lib/session";
+import SiteLogo from "@/components/brand/SiteLogo";
 
 /* =========================
    TYPES (Reusable)
@@ -109,20 +110,20 @@ type SidebarProps = {
 
 export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
   const { isActive } = useActiveRoute();
+  const router = useRouter();
+
+  function logout() {
+    clearAuthToken();
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <aside className={`flex w-64 h-screen bg-[#060A14] text-slate-300 flex-col border-r border-white/5 ${className}`}>
 
       {/* ---------- LOGO ---------- */}
       <div className="px-5 py-5 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Sparkles size={16} className="text-white" />
-          </div>
-          <span className="text-lg font-semibold text-white tracking-wide">
-            UK Trade
-          </span>
-        </div>
+        <SiteLogo variant="navbar" />
       </div>
 
       {/* ---------- MENU ---------- */}
@@ -191,7 +192,11 @@ export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
 
       {/* ---------- FOOTER ---------- */}
       <div className="p-4 border-t border-white/5">
-        <button className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300 hover:text-white transition">
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300 hover:text-white transition"
+        >
           Logout
         </button>
       </div>

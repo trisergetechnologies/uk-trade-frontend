@@ -63,13 +63,13 @@ export default function TeamHome() {
           <h1 className="text-3xl font-bold text-white">My Team</h1>
           <p className="text-slate-400 text-sm mt-1">Track your direct and full downline with filters and pagination.</p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">
           <button
             onClick={() => {
               setView("members");
               setPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg text-sm border ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-sm border ${
               view === "members" ? "border-indigo-400/30 bg-indigo-500/20 text-indigo-100" : "border-white/10 bg-white/5 text-slate-300"
             }`}
           >
@@ -77,7 +77,7 @@ export default function TeamHome() {
           </button>
           <button
             onClick={() => setView("tree")}
-            className={`px-3 py-1.5 rounded-lg text-sm border ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-sm border ${
               view === "tree" ? "border-indigo-400/30 bg-indigo-500/20 text-indigo-100" : "border-white/10 bg-white/5 text-slate-300"
             }`}
           >

@@ -105,7 +105,7 @@ const Navbar = () => {
       </div>
 
       <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition ${
+        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition ${
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
@@ -113,7 +113,7 @@ const Navbar = () => {
       />
 
       <div
-        className={`fixed right-0 top-0 h-full w-full max-w-sm bg-[#0a0a0a] border-l border-white/10 transform transition ${
+        className={`fixed right-0 top-0 z-[70] h-dvh w-full max-w-sm overflow-y-auto overscroll-y-contain bg-[#0a0a0a] border-l border-white/10 transform transition ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

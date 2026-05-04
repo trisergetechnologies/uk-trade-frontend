@@ -103,22 +103,24 @@ export default function PayoutSummary() {
         </div>
 
         {/* CONTROLS */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="mb-6 space-y-3">
 
           {/* STATUS FILTER */}
-          {(["all", "approved", "pending", "rejected"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 text-sm rounded-full border ${
-                filter === f
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "border-white/10 text-slate-400 hover:bg-white/5"
-              }`}
-            >
-              {f[0].toUpperCase() + f.slice(1)}
-            </button>
-          ))}
+          <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">
+            {(["all", "approved", "pending", "rejected"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`shrink-0 px-4 py-1.5 text-sm rounded-full border ${
+                  filter === f
+                    ? "bg-indigo-600 border-indigo-500 text-white"
+                    : "border-white/10 text-slate-400 hover:bg-white/5"
+                }`}
+              >
+                {f[0].toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
 
           {/* SEARCH */}
           <input

@@ -20,7 +20,7 @@ export default function DashboardLayout({
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen bg-[#060A14] text-white overflow-hidden">
+    <div className="flex h-screen overflow-y-hidden overflow-x-auto md:overflow-hidden bg-[#060A14] text-white">
 
       <Sidebar className="hidden md:flex" />
 
@@ -40,11 +40,11 @@ export default function DashboardLayout({
       />
 
       {/* ✅ min-h-0 is the critical fix — allows flex child to shrink */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex min-w-0 flex-1 flex-col min-h-0">
 
         <DashboardNavbar onMenuClick={() => setMobileMenuOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto px-3 py-4 md:px-8 md:py-8">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto md:overflow-x-hidden px-3 py-4 md:px-8 md:py-8">
           {children}
         </main>
 

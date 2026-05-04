@@ -6,13 +6,13 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, History, IndianRupee, Loader2, Upload } from "lucide-react";
 import { postFundRequest } from "@/lib/api";
 
-/** Temporary payment details — replace with real UPI / bank when ready. */
 const PAYMENT_DETAILS = {
-  beneficiary: "UK Trade Collections (Demo)",
-  bankName: "Example Bank Ltd.",
-  accountNumber: "XXXX1234567890",
-  ifsc: "EXBK0001234",
-  upiId: "uktrade.pay@examplebank",
+  beneficiary: process.env.NEXT_PUBLIC_PAYMENT_BENEFICIARY || "UK Trade Collections",
+  bankName: process.env.NEXT_PUBLIC_PAYMENT_BANK_NAME || "Your Bank Name",
+  accountNumber: process.env.NEXT_PUBLIC_PAYMENT_ACCOUNT_NUMBER || "Enter account number in .env",
+  ifsc: process.env.NEXT_PUBLIC_PAYMENT_IFSC || "Enter IFSC in .env",
+  upiId: process.env.NEXT_PUBLIC_PAYMENT_UPI_ID || "Enter UPI ID in .env",
+  qrImageSrc: process.env.NEXT_PUBLIC_ADD_FUND_QR_IMAGE || "/add-fund-qr-placeholder.svg",
 };
 
 type Step = 1 | 2;
@@ -186,11 +186,11 @@ export default function AddFundFlow() {
 
           <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-6">
             <Image
-              src="/add-fund-qr-placeholder.svg"
+              src={PAYMENT_DETAILS.qrImageSrc}
               alt="Scan to pay with UPI"
               width={200}
               height={200}
-              className="rounded-lg"
+              className="rounded-lg object-contain"
               priority
             />
           </div>

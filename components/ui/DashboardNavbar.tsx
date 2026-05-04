@@ -3,6 +3,7 @@
 import { Menu, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAuthMe, type AuthUser } from "@/lib/api";
+import SiteLogo from "@/components/brand/SiteLogo";
 
 type DashboardNavbarProps = {
   onMenuClick?: () => void;
@@ -47,7 +48,7 @@ export default function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
         <div className="absolute right-0 top-0 w-[300px] h-[200px] bg-purple-500/10 blur-[100px]" />
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-4">
         {onMenuClick && (
           <button
             type="button"
@@ -58,17 +59,18 @@ export default function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
             <Menu size={18} />
           </button>
         )}
-        <h1 className="text-lg md:text-xl font-semibold text-white tracking-tight">Dashboard</h1>
+        <SiteLogo variant="navbar" />
         <span className="hidden md:block text-sm text-slate-400">Welcome back 👋</span>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-5">
+      <div className="flex shrink-0 items-center gap-2 pl-2 md:gap-5">
         <div className="hidden md:block h-8 w-px bg-white/10" />
 
         <div
           className="
             flex items-center gap-3
-            px-2 py-2 md:px-3 rounded-2xl
+            rounded-full p-1.5
+            md:px-3 md:py-2 md:rounded-2xl
             bg-white/5 border border-white/10
           "
         >
