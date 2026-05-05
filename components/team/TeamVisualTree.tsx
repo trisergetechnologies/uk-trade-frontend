@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Search, Users } from "lucide-react";
-import type { TeamFocusWindowDto, TeamTreeNode } from "@/lib/api";
+import type { ApiSuccess, TeamFocusWindowDto, TeamTreeNode } from "@/lib/api";
 import { getMyTeamFocusWindow } from "@/lib/api";
 
 type Props = {
   loading: boolean;
+  /** Override API used for focus window (e.g. admin viewing another user's tree). */
+  fetchFocusWindow?: (targetUserCode?: string) => Promise<ApiSuccess<TeamFocusWindowDto>>;
+  /** UI hint: show "root" wording instead of "my". */
+  variant?: "user" | "admin";
 };
 
 function nodeClass(base = "") {
@@ -48,17 +52,19 @@ function NodeCard({
   );
 }
 
-export default function TeamVisualTree({ loading }: Props) {
+export default function TeamVisualTree({ loading, fetchFocusWindow, variant = "user" }: Props) {
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [windowData, setWindowData] = useState<TeamFocusWindowDto | null>(null);
   const [fetching, setFetching] = useState(false);
 
+  const fetcher = fetchFocusWindow ?? ((code?: string) => getMyTeamFocusWindow(code));
+
   async function loadWindow(userCode?: string) {
     try {
       setFetching(true);
       setError(null);
-      const res = await getMyTeamFocusWindow(userCode);
+      const res = await fetcher(userCode);
       setWindowData(res.data || null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load focused tree");
@@ -114,7 +120,11 @@ export default function TeamVisualTree({ loading }: Props) {
             onKeyDown={(e) => {
               if (e.key === "Enter") void loadWindow(search.trim());
             }}
-            placeholder="Search user ID and set focus context"
+            placeholder={
+              variant === "admin"
+                ? "Search user ID in this member's tree"
+                : "Search user ID and set focus context"
+            }
             className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"
           />
         </div>
@@ -132,7 +142,7 @@ export default function TeamVisualTree({ loading }: Props) {
             onClick={() => void loadWindow()}
             className="w-full sm:w-auto px-3 py-2.5 rounded-xl text-sm border border-emerald-400/30 bg-emerald-500/20 text-emerald-100"
           >
-            Show My Context
+            {variant === "admin" ? "Show root context" : "Show My Context"}
           </button>
           <button
             type="button"
@@ -280,7 +290,9 @@ export default function TeamVisualTree({ loading }: Props) {
             <div className="text-center py-10 text-slate-300 text-sm space-y-2">
               <p className="font-medium text-white">Tree context not available.</p>
               <p className="text-slate-400">
-                Try another user ID from your downline or reload your own context.
+                {variant === "admin"
+                  ? "Try another user ID or reload root context."
+                  : "Try another user ID from your downline or reload your own context."}
               </p>
               <button
                 type="button"

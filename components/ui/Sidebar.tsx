@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   User,
   Wallet,
+  Banknote,
   ArrowRightLeft,
   Download,
   Users,
@@ -11,7 +12,9 @@ import {
   HelpCircle,
   TrendingUp,
   FileText,
+  Layers,
   Package,
+  IdCard,
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -48,12 +51,15 @@ const MENU: MenuSection[] = [
     title: "ACCOUNT",
     items: [
       { name: "Profile", href: "/userdashboard/profile", icon: User },
+      { name: "KYC", href: "/userdashboard/kyc", icon: IdCard },
     ],
   },
   {
     title: "FINANCE",
     items: [
-      { name: "Add Fund", href: "/userdashboard/add-fund", icon: Wallet },
+      { name: "Wallet", href: "/userdashboard/wallet", icon: Wallet },
+      { name: "Add Fund", href: "/userdashboard/add-fund", icon: Banknote },
+      { name: "My packages", href: "/userdashboard/my-packages", icon: Layers },
       { name: "Package", href: "/userdashboard/package", icon: Package },
       { name: "Wallet ledger", href: "/userdashboard/wallet-ledger", icon: FileText },
       { name: "Withdraw", href: "/userdashboard/withdraw", icon: Download },

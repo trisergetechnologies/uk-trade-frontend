@@ -4,6 +4,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
 
 export { getToken };
 
+/** Public GET (no auth header). Used for referrer lookup on register. */
+export async function apiFetchPublic(path: string): Promise<unknown> {
+  const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const data = (await response.json().catch(() => ({}))) as { message?: string };
+  if (!response.ok) {
+    throw new Error(data.message || `API error: ${response.status}`);
+  }
+  return data;
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = getToken();
   const headers = new Headers(options.headers || {});
@@ -24,6 +34,8 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   return data;
 }
 
+export type KycStatus = 'unverified' | 'pending' | 'approved' | 'rejected';
+
 export type AuthUser = {
   id: string;
   userCode?: string;
@@ -32,6 +44,8 @@ export type AuthUser = {
   role: string;
   referralCode?: string;
   preferredCommunity?: string;
+  mobileNumber?: string;
+  kycStatus?: KycStatus;
 };
 
 export type AuthResponse = { success: boolean; data: { user: AuthUser; token: string } };
@@ -47,6 +61,7 @@ export async function authRegister(body: {
   name: string;
   email: string;
   password: string;
+  mobileNumber: string;
   referralCode: string;
   community: 'left' | 'right';
 }): Promise<AuthResponse> {
@@ -54,6 +69,11 @@ export async function authRegister(body: {
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+export async function getReferrerLookup(code: string): Promise<ApiSuccess<{ name: string; userCode: string }>> {
+  const q = new URLSearchParams({ code: code.trim() });
+  return apiFetchPublic(`/api/auth/referrer-lookup?${q}`) as Promise<ApiSuccess<{ name: string; userCode: string }>>;
 }
 
 export type ApiSuccess<T> = { success: boolean; data: T };
@@ -82,6 +102,90 @@ export async function patchMyPassword(body: {
     method: 'PATCH',
     body: JSON.stringify(body),
   });
+}
+
+export type KycSummary = {
+  status: KycStatus;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewReason?: string;
+};
+
+export async function getMyKyc(): Promise<ApiSuccess<KycSummary>> {
+  return apiFetch('/api/kyc/me');
+}
+
+export type KycDocumentKind = 'aadhaarFront' | 'aadhaarBack' | 'pan' | 'photo';
+
+export async function postKycSubmit(body: {
+  aadhaarFront: File;
+  aadhaarBack: File;
+  pan: File;
+  photo: File;
+}): Promise<ApiSuccess<KycSummary>> {
+  const form = new FormData();
+  form.append('aadhaarFront', body.aadhaarFront);
+  form.append('aadhaarBack', body.aadhaarBack);
+  form.append('pan', body.pan);
+  form.append('photo', body.photo);
+  return apiFetch('/api/kyc/me', {
+    method: 'POST',
+    body: form,
+  });
+}
+
+export async function getMyKycDocumentBlob(kind: KycDocumentKind): Promise<Blob> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(`${API_BASE}/api/kyc/me/document/${kind}`, { headers, cache: 'no-store' });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message || `Failed to fetch document (${res.status})`);
+  }
+  return res.blob();
+}
+
+export type AdminKycRow = {
+  userCode: string;
+  name: string;
+  email: string;
+  kyc: KycSummary;
+  createdAt?: string;
+};
+
+export async function getAdminKycList(
+  page = 1,
+  limit = 20,
+  status?: 'pending' | 'approved' | 'rejected' | 'unverified' | 'all',
+  q?: string
+): Promise<{ success: boolean; data: AdminKycRow[]; meta: PaginatedMeta }> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (status) params.set('status', status);
+  if (q?.trim()) params.set('q', q.trim());
+  return apiFetch(`/api/admin/kyc?${params}`);
+}
+
+export async function patchAdminKycReview(
+  userCode: string,
+  body: { status: 'approved' | 'rejected'; reason: string }
+): Promise<ApiSuccess<AdminKycRow>> {
+  return apiFetch(`/api/admin/kyc/${encodeURIComponent(userCode)}/review`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getAdminKycDocumentBlob(userCode: string, kind: KycDocumentKind): Promise<Blob> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(`${API_BASE}/api/admin/media/kyc/${encodeURIComponent(userCode)}/${kind}`, {
+    headers,
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Failed to fetch KYC document (${res.status})`);
+  return res.blob();
 }
 
 export type WalletDto = {
@@ -296,6 +400,33 @@ export async function getAdminUsers(params?: {
   return apiFetch(`/api/admin/users?${q}`);
 }
 
+export type AdminUserPasswordRow = {
+  userCode: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  password: string | null;
+  hasPasswordOnFile: boolean;
+};
+
+export async function getAdminUserPasswordsList(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  role?: string;
+  isActive?: boolean;
+}): Promise<ApiSuccess<AdminUserPasswordRow[]> & { meta: PaginatedMeta }> {
+  const q = new URLSearchParams({
+    page: String(params?.page || 1),
+    limit: String(params?.limit || 20),
+  });
+  if (params?.q?.trim()) q.set('q', params.q.trim());
+  if (params?.role?.trim()) q.set('role', params.role.trim());
+  if (typeof params?.isActive === 'boolean') q.set('isActive', String(params.isActive));
+  return apiFetch(`/api/admin/user-passwords?${q}`);
+}
+
 export type AdminUserDetailDto = {
   user: AdminUserRow & { referralCode?: string; preferredCommunity?: string };
   wallet?: { balance: number; eligibleToWithdraw: number; updatedAt?: string };
@@ -312,6 +443,92 @@ export async function patchAdminUserStatus(userCode: string, isActive: boolean):
     method: 'PATCH',
     body: JSON.stringify({ isActive }),
   });
+}
+
+export async function getAdminUserLookup(
+  userCode: string
+): Promise<ApiSuccess<{ userCode: string; name: string; isActive: boolean }>> {
+  return apiFetch(`/api/admin/users/lookup/${encodeURIComponent(userCode)}`);
+}
+
+export async function postAdminCreditUser(
+  userCode: string,
+  body: { amount: number; note?: string }
+): Promise<ApiSuccess<Record<string, unknown>>> {
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/credit`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function postAdminPurchaseForUser(
+  userCode: string,
+  body: { planCode: string; packageCode: string }
+): Promise<ApiSuccess<Record<string, unknown>>> {
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/purchase`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function getAdminUserPassword(userCode: string): Promise<ApiSuccess<{ password: string | null }>> {
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/password`);
+}
+
+export type CommunityMemberRow = {
+  memberUserCode: string;
+  memberName: string;
+  memberEmail: string;
+  memberIsActive: boolean;
+  joinedAt?: string;
+  sponsorName: string;
+  sponsorUserCode: string;
+  community: string;
+  side: string;
+  level?: number;
+};
+
+export async function getAdminCommunityUsers(params: {
+  community: 'left' | 'right';
+  page?: number;
+  limit?: number;
+  q?: string;
+}): Promise<ApiSuccess<CommunityMemberRow[]> & { meta: PaginatedMeta }> {
+  const q = new URLSearchParams({
+    community: params.community,
+    page: String(params.page || 1),
+    limit: String(params.limit || 20),
+  });
+  if (params.q?.trim()) q.set('q', params.q.trim());
+  return apiFetch(`/api/admin/community-users?${q}`);
+}
+
+export async function getAdminUserTeamTree(
+  rootUserCode: string,
+  depth = 6,
+  nodes = 500
+): Promise<ApiSuccess<TeamTreeDto>> {
+  const q = new URLSearchParams({ depth: String(depth), nodes: String(nodes) });
+  return apiFetch(`/api/admin/users/${encodeURIComponent(rootUserCode)}/team/tree?${q}`);
+}
+
+export async function getAdminUserTeamTreeChildren(
+  rootUserCode: string,
+  parentUserCode: string,
+  limit = 120
+): Promise<ApiSuccess<{ parentUserCode: string; data: TeamTreeNode[] }>> {
+  const q = new URLSearchParams({ parentUserCode, limit: String(limit) });
+  return apiFetch(`/api/admin/users/${encodeURIComponent(rootUserCode)}/team/tree/children?${q}`);
+}
+
+export async function getAdminUserTeamFocus(
+  rootUserCode: string,
+  targetUserCode?: string
+): Promise<ApiSuccess<TeamFocusWindowDto>> {
+  const q = new URLSearchParams();
+  if (targetUserCode?.trim()) q.set('targetUserCode', targetUserCode.trim().toUpperCase());
+  const suffix = q.toString() ? `?${q}` : '';
+  return apiFetch(`/api/admin/users/${encodeURIComponent(rootUserCode)}/team/tree/focus${suffix}`);
 }
 
 export type AdminAuditLogRow = {
@@ -587,11 +804,28 @@ export async function getIncomeMatching(): Promise<ApiSuccess<MatchingIncomeRow[
   return apiFetch('/api/income/matching');
 }
 
+/** Subscription from GET /api/packages/me (planId populated). */
+export type PackageSubscriptionPlan = {
+  code?: string;
+  name?: string;
+  dailyPercent?: number;
+  cycleDaysW?: number;
+  maxWorkingDaysN?: number;
+  summary?: string;
+};
+
 export type PackageRow = {
-  id: string;
+  id?: string;
+  _id?: string;
+  publicId?: string;
   principalAmount: number;
   status: string;
-  planId?: { code?: string; name?: string };
+  purchaseDateIst?: string;
+  firstEarningDateIst?: string;
+  withdrawalDay1Ist?: string;
+  workingDaysCredited?: number;
+  planId?: PackageSubscriptionPlan | string;
+  createdAt?: string;
 };
 
 export async function getMyPackages(): Promise<ApiSuccess<PackageRow[]>> {
@@ -717,7 +951,7 @@ export type TeamFocusWindowDto = {
   focus: TeamTreeNode | null;
   children: TeamTreeNode[];
   grandchildrenByParent: Record<string, TeamTreeNode[]>;
-  relation: "self" | "parent" | "descendant";
+  relation: "self" | "parent" | "descendant" | "admin_view";
 };
 
 export async function getMyTeamFocusWindow(

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   getMyBankAccount,
+  getMyKyc,
   getWalletMe,
   postWithdrawalRequest,
   putMyBankAccount,
@@ -51,15 +52,17 @@ export default function SendWithdrawRequest() {
   const [editingBank, setEditingBank] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [kycApproved, setKycApproved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [walletRes, bankRes] = await Promise.all([getWalletMe(), getMyBankAccount()]);
+        const [walletRes, bankRes, kycRes] = await Promise.all([getWalletMe(), getMyBankAccount(), getMyKyc()]);
         if (cancelled) return;
         setWalletBalance(Number(walletRes.data?.balance) || 0);
         setEligibleToWithdraw(Number(walletRes.data?.eligibleToWithdraw) || 0);
+        setKycApproved(kycRes.data?.status === "approved");
         const bankData = bankRes.data;
         setBank(bankData);
         if (bankData?.isComplete) {
@@ -87,19 +90,22 @@ export default function SendWithdrawRequest() {
   const numericAmount = Number(amount || 0);
   const maxAllowed = Math.min(walletBalance, eligibleToWithdraw);
   const canRequest =
+    kycApproved &&
     bank?.isComplete &&
     Number.isFinite(numericAmount) &&
     numericAmount >= MIN_AMOUNT &&
     numericAmount <= maxAllowed;
 
   const requestHint = useMemo(() => {
+    if (!kycApproved)
+      return "Complete KYC (Aadhaar front & back, PAN, photo) and wait for admin approval — see Account → KYC.";
     if (!bank?.isComplete) return "Save your bank account first.";
     if (!amount) return `Enter an amount between ${formatInr(MIN_AMOUNT)} and ${formatInr(maxAllowed)}.`;
     if (numericAmount < MIN_AMOUNT) return `Minimum withdrawal is ${formatInr(MIN_AMOUNT)}.`;
     if (numericAmount > maxAllowed)
       return `Amount cannot exceed eligible/wallet limit (${formatInr(maxAllowed)}).`;
     return "Request follows wallet + eligibility business rules.";
-  }, [amount, bank?.isComplete, maxAllowed, numericAmount]);
+  }, [amount, bank?.isComplete, kycApproved, maxAllowed, numericAmount]);
 
   async function onSaveBank(e: React.FormEvent) {
     e.preventDefault();
@@ -167,7 +173,19 @@ export default function SendWithdrawRequest() {
           <History className="w-4 h-4" />
           Request History
         </Link>
+        <Link
+          href="/userdashboard/kyc"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-amber-100 hover:bg-amber-500/20"
+        >
+          KYC
+        </Link>
       </div>
+
+      {!kycApproved && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Withdrawals are disabled until KYC is submitted and approved. Open <strong className="text-white">Account → KYC</strong> to upload Aadhaar front & back, PAN, and your photo.
+        </div>
+      )}
 
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5">
         <h2 className="text-xl font-semibold text-white">Withdrawal Request</h2>

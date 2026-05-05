@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { authRegister } from "@/lib/api";
+import { Suspense, useEffect, useState } from "react";
+import { authRegister, getReferrerLookup } from "@/lib/api";
 import { dashboardPathForRole, setAuthToken } from "@/lib/session";
 
 function safePostLoginPath(from: string | null, role: string) {
@@ -21,11 +21,14 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [community, setCommunity] = useState<"left" | "right">("left");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sponsorPreview, setSponsorPreview] = useState<{ name: string } | null>(null);
+  const [sponsorLookupErr, setSponsorLookupErr] = useState<string | null>(null);
   const refFromLink = searchParams.get("ref") || searchParams.get("referralCode") || "";
   const sideFromLink = searchParams.get("community") || searchParams.get("side") || "";
 
@@ -36,7 +39,27 @@ function RegisterForm() {
     }
   }, [refFromLink, sideFromLink]);
 
-  const isReferralPrefilled = useMemo(() => Boolean(refFromLink), [refFromLink]);
+  useEffect(() => {
+    const code = referralCode.trim();
+    if (code.length < 3) {
+      setSponsorPreview(null);
+      setSponsorLookupErr(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      (async () => {
+        try {
+          setSponsorLookupErr(null);
+          const res = await getReferrerLookup(code);
+          setSponsorPreview({ name: res.data.name });
+        } catch {
+          setSponsorPreview(null);
+          setSponsorLookupErr("Invalid or unknown referral code");
+        }
+      })();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [referralCode]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +69,7 @@ function RegisterForm() {
       const res = await authRegister({
         name: name.trim(),
         email: email.trim(),
+        mobileNumber: mobileNumber.trim(),
         password,
         referralCode: referralCode.trim(),
         community,
@@ -70,11 +94,6 @@ function RegisterForm() {
             Sign in
           </Link>
         </p>
-        {isReferralPrefilled && (
-          <p className="mt-3 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-            Referral link detected. Sponsor code and default community have been auto-filled.
-          </p>
-        )}
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
@@ -101,6 +120,24 @@ function RegisterForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="mobile" className="block text-sm text-gray-300 mb-1">
+              Mobile number
+            </label>
+            <input
+              id="mobile"
+              type="tel"
+              required
+              minLength={7}
+              maxLength={20}
+              pattern="[0-9+\\-() ]{7,20}"
+              title="7–20 digits or common phone characters"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              placeholder="+91 98765 43210"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 placeholder:text-gray-600"
             />
           </div>
           <div>
@@ -131,6 +168,14 @@ function RegisterForm() {
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 placeholder:text-gray-600"
             />
             <p className="mt-1 text-xs text-gray-500">Use the sponsor code received in referral link or from your sponsor.</p>
+            {sponsorPreview && (
+              <p className="mt-2 text-sm text-emerald-400/95">
+                Sponsor: <span className="font-medium text-white">{sponsorPreview.name}</span>
+              </p>
+            )}
+            {referralCode.trim().length >= 3 && sponsorLookupErr && (
+              <p className="mt-2 text-xs text-amber-400">{sponsorLookupErr}</p>
+            )}
           </div>
           <div>
             <span className="block text-sm text-gray-300 mb-2">Preferred community</span>

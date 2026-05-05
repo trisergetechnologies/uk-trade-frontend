@@ -60,7 +60,9 @@ export default function AdminWithdrawalsPage() {
   }, [status]);
 
   const review = async (id: string, decision: "approved" | "rejected", reason: string) => {
-    await apiFetch(`/api/withdrawals/admin/${id}/review`, {
+    const rid = id.trim();
+    if (!rid) throw new Error("Missing withdrawal id");
+    await apiFetch(`/api/withdrawals/admin/${encodeURIComponent(rid)}/review`, {
       method: "PATCH",
       body: JSON.stringify({ status: decision, reason }),
     });
@@ -125,8 +127,8 @@ export default function AdminWithdrawalsPage() {
               </tr>
             )}
             {!loading &&
-              rows.map((row) => (
-                <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.04]">
+              rows.map((row, idx) => (
+                <tr key={row.id || `wd-${idx}`} className="border-b border-white/5 hover:bg-white/[0.04]">
                   <td className="px-4 py-3 whitespace-nowrap text-slate-400">
                     {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
                   </td>
@@ -234,9 +236,12 @@ export default function AdminWithdrawalsPage() {
                     return;
                   }
                   setReviewSubmitting(true);
+                  setError("");
                   try {
                     await review(reviewRow.id, reviewDecision, reviewReason.trim());
                     setReviewRow(null);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Withdrawal review failed");
                   } finally {
                     setReviewSubmitting(false);
                   }
