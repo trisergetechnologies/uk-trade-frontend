@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import {
   getPackageProducts,
   getPlans,
@@ -31,6 +31,8 @@ export default function PackagePurchaseFlow() {
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const packageNextRef = useRef<HTMLDivElement | null>(null);
+  const planNextRef = useRef<HTMLDivElement | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -54,6 +56,16 @@ export default function PackagePurchaseFlow() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (step !== 1 || !product) return;
+    packageNextRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [product, step]);
+
+  useEffect(() => {
+    if (step !== 2 || !plan) return;
+    planNextRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [plan, step]);
 
   async function onConfirmPurchase() {
     if (!product || !plan) return;
@@ -153,47 +165,47 @@ export default function PackagePurchaseFlow() {
       {step === 1 && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">1. Choose a package (fixed amount)</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((p) => {
               const selected = product?.id === p.id;
               const canAfford = balance !== null && p.amount <= balance;
               return (
-                <div
-                  key={p.id}
-                  className={`
+                <Fragment key={p.id}>
+                  <div
+                    className={`
                     relative rounded-2xl border p-4 text-left transition
                     ${selected ? "border-indigo-500/60 ring-1 ring-indigo-500/30 bg-indigo-500/10" : "border-white/10 bg-white/[0.03] hover:border-white/20"}
                   `}
-                >
-                  <div className="absolute top-3 right-3">
-                    <InfoTooltip label={`Details: ${p.name}`}>{p.detailHelp || p.shortDescription || p.name}</InfoTooltip>
-                  </div>
-                  <p className="text-xs uppercase tracking-wider text-slate-500 pr-8">{p.code}</p>
-                  <p className="text-lg font-bold text-white mt-1">{formatInr(p.amount)}</p>
-                  <p className="text-sm text-slate-300 font-medium mt-0.5">{p.name}</p>
-                  {p.shortDescription && (
-                    <p className="text-xs text-slate-500 mt-1">{p.shortDescription}</p>
-                  )}
-                  {p.features && p.features.length > 0 && (
-                    <ul className="mt-3 text-xs text-slate-400 space-y-1 list-disc list-inside">
-                      {p.features.map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {!canAfford && (
-                    <p className="mt-2 text-xs text-amber-400/90 flex items-center gap-1">
-                      <Lock className="w-3 h-3" />
-                      Add funds to reach this amount
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProduct(p);
-                    }}
-                    disabled={!canAfford}
-                    className={`
+                  >
+                    <div className="absolute top-3 right-3">
+                      <InfoTooltip label={`Details: ${p.name}`}>{p.detailHelp || p.shortDescription || p.name}</InfoTooltip>
+                    </div>
+                    <p className="text-xs uppercase tracking-wider text-slate-500 pr-8">{p.code}</p>
+                    <p className="text-lg font-bold text-white mt-1">{formatInr(p.amount)}</p>
+                    <p className="text-sm text-slate-300 font-medium mt-0.5">{p.name}</p>
+                    {p.shortDescription && (
+                      <p className="text-xs text-slate-500 mt-1">{p.shortDescription}</p>
+                    )}
+                    {p.features && p.features.length > 0 && (
+                      <ul className="mt-3 text-xs text-slate-400 space-y-1 list-disc list-inside">
+                        {p.features.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {!canAfford && (
+                      <p className="mt-2 text-xs text-amber-400/90 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        Add funds to reach this amount
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProduct(p);
+                      }}
+                      disabled={!canAfford}
+                      className={`
                       mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition
                       ${
                         selected
@@ -201,22 +213,25 @@ export default function PackagePurchaseFlow() {
                           : "bg-white/5 text-slate-200 hover:bg-white/10 disabled:opacity-40"
                       }
                     `}
-                  >
-                    {selected ? "Selected" : "Select"}
-                  </button>
-                </div>
+                    >
+                      {selected ? "Selected" : "Select"}
+                    </button>
+                  </div>
+                  {selected && (
+                    <div ref={packageNextRef} className="col-span-full">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="w-full sm:w-auto px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-medium shadow-lg shadow-indigo-900/30"
+                      >
+                        Next: pick a plan
+                      </button>
+                      <p className="text-xs text-slate-500 mt-2">Continue to choose plan A–D for this package.</p>
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
-          </div>
-          <div className="mt-6">
-            <button
-              type="button"
-              disabled={!product}
-              onClick={() => setStep(2)}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40"
-            >
-              Next: pick a plan
-            </button>
           </div>
         </section>
       )}
@@ -237,49 +252,49 @@ export default function PackagePurchaseFlow() {
             cycle length; <strong className="text-slate-400">N</strong> = working days of income before the subscription completes.
             Tap <Info className="w-3 h-3 inline" /> on each plan for the full blurb.
           </p>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {plans.map((pl) => {
               const selected = plan?.id === pl.id;
               return (
-                <div
-                  key={pl.id}
-                  className={`
+                <Fragment key={pl.id}>
+                  <div
+                    className={`
                     relative rounded-2xl border p-4
                     ${selected ? "border-indigo-500/60 ring-1 ring-indigo-500/30 bg-indigo-500/10" : "border-white/10 bg-white/[0.03]"}
                   `}
-                >
-                  <div className="absolute top-3 right-3">
-                    <InfoTooltip label={`Details: Plan ${pl.code}`}>
-                      {pl.detailHelp || `${pl.name}. Daily % ${pl.dailyPercent}, W = ${pl.cycleDaysW} days, N = ${pl.maxWorkingDaysN} working days.`}
-                    </InfoTooltip>
-                  </div>
-                  <p className="pr-8">
-                    <span className="text-2xl font-bold text-white">{pl.code}</span>{" "}
-                    <span className="text-slate-300 text-sm">{pl.name.replace(/^Plan [A-D] — /, "")}</span>
-                  </p>
-                  {pl.summary && <p className="text-xs text-slate-500 mt-2">{pl.summary}</p>}
-                  <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
-                    <div>
-                      <dt className="text-slate-500">Daily %</dt>
-                      <dd className="text-slate-200 font-medium tabular-nums">{pl.dailyPercent}%</dd>
+                  >
+                    <div className="absolute top-3 right-3">
+                      <InfoTooltip label={`Details: Plan ${pl.code}`}>
+                        {pl.detailHelp || `${pl.name}. Daily % ${pl.dailyPercent}, W = ${pl.cycleDaysW} days, N = ${pl.maxWorkingDaysN} working days.`}
+                      </InfoTooltip>
                     </div>
-                    <div>
-                      <dt className="text-slate-500">W (cycle days)</dt>
-                      <dd className="text-slate-200 font-medium">{pl.cycleDaysW}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-500">N (income days)</dt>
-                      <dd className="text-slate-200 font-medium">{pl.maxWorkingDaysN}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-500">Sponsor %</dt>
-                      <dd className="text-slate-200 font-medium">{pl.sponsorPercent ?? 0}%</dd>
-                    </div>
-                  </dl>
-                  <button
-                    type="button"
-                    onClick={() => setPlan(pl)}
-                    className={`
+                    <p className="pr-8">
+                      <span className="text-2xl font-bold text-white">{pl.code}</span>{" "}
+                      <span className="text-slate-300 text-sm">{pl.name.replace(/^Plan [A-D] — /, "")}</span>
+                    </p>
+                    {pl.summary && <p className="text-xs text-slate-500 mt-2">{pl.summary}</p>}
+                    <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
+                      <div>
+                        <dt className="text-slate-500">Daily %</dt>
+                        <dd className="text-slate-200 font-medium tabular-nums">{pl.dailyPercent}%</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">W (cycle days)</dt>
+                        <dd className="text-slate-200 font-medium">{pl.cycleDaysW}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">N (income days)</dt>
+                        <dd className="text-slate-200 font-medium">{pl.maxWorkingDaysN}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Sponsor %</dt>
+                        <dd className="text-slate-200 font-medium">{pl.sponsorPercent ?? 0}%</dd>
+                      </div>
+                    </dl>
+                    <button
+                      type="button"
+                      onClick={() => setPlan(pl)}
+                      className={`
                       mt-4 w-full py-2.5 rounded-xl text-sm font-medium
                       ${
                         selected
@@ -287,22 +302,25 @@ export default function PackagePurchaseFlow() {
                           : "bg-white/5 text-slate-200 hover:bg-white/10"
                       }
                     `}
-                  >
-                    {selected ? "Selected" : "Select plan"}
-                  </button>
-                </div>
+                    >
+                      {selected ? "Selected" : "Select plan"}
+                    </button>
+                  </div>
+                  {selected && (
+                    <div ref={planNextRef} className="col-span-full">
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="w-full sm:w-auto px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-medium shadow-lg shadow-indigo-900/30"
+                      >
+                        Next: review &amp; pay
+                      </button>
+                      <p className="text-xs text-slate-500 mt-2">Review package + plan and confirm wallet debit.</p>
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              disabled={!plan}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40"
-            >
-              Next: review &amp; pay
-            </button>
           </div>
         </section>
       )}

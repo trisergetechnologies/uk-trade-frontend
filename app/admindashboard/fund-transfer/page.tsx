@@ -9,6 +9,7 @@ import { getAdminUserLookup, postAdminCreditUser } from "@/lib/api";
 export default function AdminFundTransferPage() {
   const [toUserCode, setToUserCode] = useState("");
   const [resolvedName, setResolvedName] = useState<string | null>(null);
+  const [resolvedUserCode, setResolvedUserCode] = useState<string | null>(null);
   const [resolvedActive, setResolvedActive] = useState<boolean | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
@@ -17,11 +18,13 @@ export default function AdminFundTransferPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const debouncedCode = toUserCode.trim().toUpperCase();
+  /** Normalized for API: trim, collapse spaces, uppercase (safe for mobiles e.g. +91…). */
+  const recipientKey = toUserCode.trim().replace(/\s/g, "").toUpperCase();
 
   const runLookup = useCallback(async (code: string) => {
     if (code.length < 3) {
       setResolvedName(null);
+      setResolvedUserCode(null);
       setResolvedActive(null);
       setLookupError(null);
       return;
@@ -30,9 +33,11 @@ export default function AdminFundTransferPage() {
       setLookupError(null);
       const res = await getAdminUserLookup(code);
       setResolvedName(res.data.name);
+      setResolvedUserCode(res.data.userCode ?? null);
       setResolvedActive(res.data.isActive);
     } catch {
       setResolvedName(null);
+      setResolvedUserCode(null);
       setResolvedActive(null);
       setLookupError("User not found");
     }
@@ -40,20 +45,20 @@ export default function AdminFundTransferPage() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      void runLookup(debouncedCode);
+      void runLookup(recipientKey);
     }, 350);
     return () => clearTimeout(t);
-  }, [debouncedCode, runLookup]);
+  }, [recipientKey, runLookup]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(false);
     const amt = Number(amount);
-    if (!debouncedCode || !Number.isFinite(amt) || amt <= 0) return;
+    if (!recipientKey || !Number.isFinite(amt) || amt <= 0) return;
     try {
       setSubmitting(true);
-      await postAdminCreditUser(debouncedCode, { amount: amt, note: note.trim() || undefined });
+      await postAdminCreditUser(recipientKey, { amount: amt, note: note.trim() || undefined });
       setSuccess(true);
       setAmount("");
       setNote("");
@@ -75,34 +80,41 @@ export default function AdminFundTransferPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-semibold text-white">Credit user wallet</h1>
-          <p className="text-sm text-slate-400">Mint balance + eligible amount for a member (admin credit).</p>
+          <p className="text-sm text-slate-400">
+            Mint balance + eligible amount for a member. Enter their user code or registered mobile number.
+          </p>
         </div>
       </div>
 
       <form onSubmit={onSubmit} className="rounded-xl border border-white/10 bg-white/[0.03] p-6 space-y-5">
         <div>
-          <label className="text-sm text-slate-400 mb-2 block">Recipient user code</label>
+          <label className="text-sm text-slate-400 mb-2 block">Recipient user code or mobile number</label>
           <div className="relative">
             <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               value={toUserCode}
-              onChange={(e) => setToUserCode(e.target.value.toUpperCase())}
-              placeholder="USR…"
+              onChange={(e) => setToUserCode(e.target.value)}
+              placeholder="e.g. USR… or 9876543210 / +91…"
+              inputMode="text"
+              autoComplete="off"
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
           </div>
-          {debouncedCode.length >= 3 && (
+          {recipientKey.length >= 3 && (
             <p className="mt-2 text-sm">
               {lookupError && <span className="text-amber-400">{lookupError}</span>}
               {!lookupError && resolvedName && (
                 <span className="text-emerald-300">
                   {resolvedName}
+                  {resolvedUserCode ? (
+                    <span className="text-slate-400 font-normal ml-1">· {resolvedUserCode}</span>
+                  ) : null}
                   {resolvedActive === false && (
                     <span className="text-amber-400 ml-2">(inactive)</span>
                   )}
                 </span>
               )}
-              {!lookupError && !resolvedName && debouncedCode.length >= 3 && (
+              {!lookupError && !resolvedName && recipientKey.length >= 3 && (
                 <span className="text-slate-500">Looking up…</span>
               )}
             </p>
@@ -142,7 +154,7 @@ export default function AdminFundTransferPage() {
 
         <button
           type="submit"
-          disabled={submitting || !debouncedCode || !resolvedName}
+          disabled={submitting || !recipientKey || !resolvedName}
           className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-medium flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Send size={16} />
