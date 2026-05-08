@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { User, Mail, BadgeCheck, Copy, Share2, Link2 } from "lucide-react";
+import { User, Mail, BadgeCheck, Copy, Share2, Link2, Landmark } from "lucide-react";
 import { getAuthMe, type AuthUser } from "@/lib/api";
 
 export default function ProfileView() {
@@ -168,6 +168,17 @@ export default function ProfileView() {
             Change Password
           </Link>
         </div>
+
+        <Link
+          href="/userdashboard/profile/bank"
+          className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm hover:bg-white/10"
+        >
+          <span className="flex items-center gap-2 text-slate-200">
+            <Landmark size={16} className="text-indigo-300" />
+            Manage bank account
+          </span>
+          <span className="text-xs text-slate-400">Used for withdrawals</span>
+        </Link>
       </div>
     </div>
   );

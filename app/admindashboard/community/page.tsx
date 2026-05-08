@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAdminCommunityUsers, type CommunityMemberRow, type PaginatedMeta } from "@/lib/api";
+import {
+  getAdminCommunityTotals,
+  getAdminCommunityUsers,
+  type AdminCommunityTotalsDto,
+  type CommunityMemberRow,
+  type PaginatedMeta,
+} from "@/lib/api";
+import { formatInr } from "@/lib/formatInr";
 
 const PAGE_SIZE = 25;
 
@@ -13,6 +20,8 @@ export default function AdminCommunityPage() {
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totals, setTotals] = useState<AdminCommunityTotalsDto | null>(null);
+  const [totalsError, setTotalsError] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -32,12 +41,56 @@ export default function AdminCommunityPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setTotalsError("");
+        const res = await getAdminCommunityTotals();
+        if (!cancelled) setTotals(res.data);
+      } catch (err) {
+        if (!cancelled) setTotalsError(err instanceof Error ? err.message : "Failed to load totals");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold text-white">Community members</h1>
         <p className="text-sm text-slate-400">All users by binary-tree community (left / right).</p>
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-emerald-300/80">Left community users</p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {totals ? totals.left.users : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-emerald-300/80">Left investment</p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {totals ? formatInr(totals.left.investment) : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-indigo-300/80">Right community users</p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {totals ? totals.right.users : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-indigo-300/80">Right investment</p>
+          <p className="mt-1 text-xl font-semibold text-white">
+            {totals ? formatInr(totals.right.investment) : "—"}
+          </p>
+        </div>
+      </div>
+      {totalsError && <p className="text-xs text-amber-400">{totalsError}</p>}
 
       <div className="flex flex-wrap gap-2">
         {(["left", "right"] as const).map((c) => (

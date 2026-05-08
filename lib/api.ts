@@ -117,17 +117,31 @@ export async function getMyKyc(): Promise<ApiSuccess<KycSummary>> {
 
 export type KycDocumentKind = 'aadhaarFront' | 'aadhaarBack' | 'pan' | 'photo';
 
+export type KycBankInput = {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  upiId?: string;
+};
+
 export async function postKycSubmit(body: {
   aadhaarFront: File;
   aadhaarBack: File;
   pan: File;
   photo: File;
+  bank: KycBankInput;
 }): Promise<ApiSuccess<KycSummary>> {
   const form = new FormData();
   form.append('aadhaarFront', body.aadhaarFront);
   form.append('aadhaarBack', body.aadhaarBack);
   form.append('pan', body.pan);
   form.append('photo', body.photo);
+  form.append('accountHolderName', body.bank.accountHolderName);
+  form.append('bankName', body.bank.bankName);
+  form.append('accountNumber', body.bank.accountNumber);
+  form.append('ifscCode', body.bank.ifscCode);
+  form.append('upiId', body.bank.upiId || '');
   return apiFetch('/api/kyc/me', {
     method: 'POST',
     body: form,
@@ -503,6 +517,15 @@ export async function getAdminCommunityUsers(params: {
   return apiFetch(`/api/admin/community-users?${q}`);
 }
 
+export type AdminCommunityTotalsDto = {
+  left: { users: number; investment: number };
+  right: { users: number; investment: number };
+};
+
+export async function getAdminCommunityTotals(): Promise<ApiSuccess<AdminCommunityTotalsDto>> {
+  return apiFetch('/api/admin/community-totals');
+}
+
 export async function getAdminUserTeamTree(
   rootUserCode: string,
   depth = 6,
@@ -863,6 +886,10 @@ export type TeamSummaryDto = {
   maxLevel: number;
   leftCommunityMembers: number;
   rightCommunityMembers: number;
+  myLeftMembers: number;
+  myRightMembers: number;
+  myLeftInvestment: number;
+  myRightInvestment: number;
 };
 
 export type TeamMemberRow = {

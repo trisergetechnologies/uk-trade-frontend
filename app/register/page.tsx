@@ -33,7 +33,7 @@ function RegisterForm() {
   const sideFromLink = searchParams.get("community") || searchParams.get("side") || "";
 
   useEffect(() => {
-    if (refFromLink) setReferralCode(refFromLink.trim().toUpperCase());
+    if (refFromLink) setReferralCode(refFromLink.trim());
     if (sideFromLink === "left" || sideFromLink === "right") {
       setCommunity(sideFromLink);
     }
@@ -164,10 +164,10 @@ function RegisterForm() {
               minLength={3}
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value)}
-              placeholder="e.g. UTXXXXXX from your sponsor"
+              placeholder="5-digit code from your sponsor"
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 placeholder:text-gray-600"
             />
-            <p className="mt-1 text-xs text-gray-500">Use the sponsor code received in referral link or from your sponsor.</p>
+            <p className="mt-1 text-xs text-gray-500">Use the 5-digit sponsor code received in the referral link or from your sponsor.</p>
             {sponsorPreview && (
               <p className="mt-2 text-sm text-emerald-400/95">
                 Sponsor: <span className="font-medium text-white">{sponsorPreview.name}</span>

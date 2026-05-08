@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, IdCard, ImageIcon, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, IdCard, ImageIcon, Landmark, Loader2, Upload } from "lucide-react";
 import {
+  getMyBankAccount,
   getMyKyc,
   getMyKycDocumentBlob,
   postKycSubmit,
@@ -17,6 +18,14 @@ const KYC_DOC_VIEWS: { kind: KycDocumentKind; label: string }[] = [
   { kind: "pan", label: "PAN" },
   { kind: "photo", label: "Photo" },
 ];
+
+type BankForm = {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  upiId: string;
+};
 
 function statusLabel(s: KycSummary["status"]) {
   switch (s) {
@@ -42,13 +51,28 @@ export default function KycSubmission() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [bankForm, setBankForm] = useState<BankForm>({
+    accountHolderName: "",
+    bankName: "",
+    accountNumber: "",
+    ifscCode: "",
+    upiId: "",
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getMyKyc();
-      setSummary(res.data);
+      const [kycRes, bankRes] = await Promise.all([getMyKyc(), getMyBankAccount()]);
+      setSummary(kycRes.data);
+      const b = bankRes.data;
+      setBankForm({
+        accountHolderName: b.accountHolderName || "",
+        bankName: b.bankName || "",
+        accountNumber: "",
+        ifscCode: b.ifscCode || "",
+        upiId: b.upiId || "",
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load KYC");
     } finally {
@@ -101,14 +125,35 @@ export default function KycSubmission() {
       setError("Please upload Aadhaar front, Aadhaar back, PAN, and your photo.");
       return;
     }
+    const accountHolderName = bankForm.accountHolderName.trim();
+    const bankName = bankForm.bankName.trim();
+    const accountNumber = bankForm.accountNumber.trim();
+    const ifscCode = bankForm.ifscCode.trim().toUpperCase();
+    if (!accountHolderName || !bankName || !accountNumber || !ifscCode) {
+      setError("Please fill in account holder, bank name, account number, and IFSC.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const res = await postKycSubmit({ aadhaarFront, aadhaarBack, pan, photo });
+      const res = await postKycSubmit({
+        aadhaarFront,
+        aadhaarBack,
+        pan,
+        photo,
+        bank: {
+          accountHolderName,
+          bankName,
+          accountNumber,
+          ifscCode,
+          upiId: bankForm.upiId.trim().toLowerCase(),
+        },
+      });
       setSummary(res.data);
       setAadhaarFront(null);
       setAadhaarBack(null);
       setPan(null);
       setPhoto(null);
+      setBankForm((s) => ({ ...s, accountNumber: "" }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
     } finally {
@@ -259,6 +304,58 @@ export default function KycSubmission() {
             </span>
             {photo ? <span className="text-xs text-slate-500">{photo.name}</span> : null}
           </label>
+
+          <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-sm text-slate-300 flex items-center gap-2">
+              <Landmark size={16} className="text-indigo-300" />
+              Bank account for payouts
+            </p>
+            <p className="text-xs text-slate-500">
+              We capture your bank details now (along with KYC) so withdrawals can be processed without delay.
+              You can update them later from Profile → Bank.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <input
+                value={bankForm.accountHolderName}
+                onChange={(e) => setBankForm((s) => ({ ...s, accountHolderName: e.target.value }))}
+                placeholder="Account holder name"
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                required
+                minLength={2}
+              />
+              <input
+                value={bankForm.bankName}
+                onChange={(e) => setBankForm((s) => ({ ...s, bankName: e.target.value }))}
+                placeholder="Bank name"
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                required
+                minLength={2}
+              />
+              <input
+                value={bankForm.accountNumber}
+                onChange={(e) => setBankForm((s) => ({ ...s, accountNumber: e.target.value.replace(/[^\d]/g, "") }))}
+                placeholder="Account number"
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                required
+                minLength={6}
+                inputMode="numeric"
+              />
+              <input
+                value={bankForm.ifscCode}
+                onChange={(e) => setBankForm((s) => ({ ...s, ifscCode: e.target.value.toUpperCase() }))}
+                placeholder="IFSC code"
+                className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                required
+                minLength={4}
+              />
+              <input
+                value={bankForm.upiId}
+                onChange={(e) => setBankForm((s) => ({ ...s, upiId: e.target.value }))}
+                placeholder="UPI ID (optional)"
+                className="sm:col-span-2 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+              />
+            </div>
+          </div>
 
           <button
             type="submit"

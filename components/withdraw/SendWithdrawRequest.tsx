@@ -7,7 +7,6 @@ import {
   getMyKyc,
   getWalletMe,
   postWithdrawalRequest,
-  putMyBankAccount,
   type BankAccountDto,
 } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
@@ -19,37 +18,18 @@ import {
   IndianRupee,
   Landmark,
   Loader2,
-  Pencil,
-  Save,
   Send,
 } from "lucide-react";
 
 const MIN_AMOUNT = 500;
 
-type BankForm = {
-  accountHolderName: string;
-  bankName: string;
-  accountNumber: string;
-  ifscCode: string;
-  upiId: string;
-};
-
 export default function SendWithdrawRequest() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [eligibleToWithdraw, setEligibleToWithdraw] = useState(0);
   const [bank, setBank] = useState<BankAccountDto | null>(null);
-  const [bankForm, setBankForm] = useState<BankForm>({
-    accountHolderName: "",
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    upiId: "",
-  });
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(true);
-  const [savingBank, setSavingBank] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [editingBank, setEditingBank] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [kycApproved, setKycApproved] = useState(false);
@@ -63,19 +43,7 @@ export default function SendWithdrawRequest() {
         setWalletBalance(Number(walletRes.data?.balance) || 0);
         setEligibleToWithdraw(Number(walletRes.data?.eligibleToWithdraw) || 0);
         setKycApproved(kycRes.data?.status === "approved");
-        const bankData = bankRes.data;
-        setBank(bankData);
-        if (bankData?.isComplete) {
-          setBankForm({
-            accountHolderName: bankData.accountHolderName || "",
-            bankName: bankData.bankName || "",
-            accountNumber: "",
-            ifscCode: bankData.ifscCode || "",
-            upiId: bankData.upiId || "",
-          });
-        } else {
-          setEditingBank(true);
-        }
+        setBank(bankRes.data);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load withdrawal data");
       } finally {
@@ -98,38 +66,14 @@ export default function SendWithdrawRequest() {
 
   const requestHint = useMemo(() => {
     if (!kycApproved)
-      return "Complete KYC (Aadhaar front & back, PAN, photo) and wait for admin approval — see Account → KYC.";
-    if (!bank?.isComplete) return "Save your bank account first.";
+      return "Complete KYC (Aadhaar front & back, PAN, photo, plus bank details) and wait for admin approval — see Account → KYC.";
+    if (!bank?.isComplete) return "Add your bank account in Profile → Bank before requesting a withdrawal.";
     if (!amount) return `Enter an amount between ${formatInr(MIN_AMOUNT)} and ${formatInr(maxAllowed)}.`;
     if (numericAmount < MIN_AMOUNT) return `Minimum withdrawal is ${formatInr(MIN_AMOUNT)}.`;
     if (numericAmount > maxAllowed)
       return `Amount cannot exceed eligible/wallet limit (${formatInr(maxAllowed)}).`;
     return "Request follows wallet + eligibility business rules.";
   }, [amount, bank?.isComplete, kycApproved, maxAllowed, numericAmount]);
-
-  async function onSaveBank(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setSavingBank(true);
-    try {
-      const res = await putMyBankAccount({
-        accountHolderName: bankForm.accountHolderName,
-        bankName: bankForm.bankName,
-        accountNumber: bankForm.accountNumber,
-        ifscCode: bankForm.ifscCode,
-        upiId: bankForm.upiId || "",
-      });
-      setBank(res.data);
-      setBankForm((prev) => ({ ...prev, accountNumber: "", ifscCode: prev.ifscCode.toUpperCase() }));
-      setEditingBank(false);
-      setMessage("Bank account saved.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save bank account");
-    } finally {
-      setSavingBank(false);
-    }
-  }
 
   async function onSubmitRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -179,18 +123,25 @@ export default function SendWithdrawRequest() {
         >
           KYC
         </Link>
+        <Link
+          href="/userdashboard/profile/bank"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-indigo-100 hover:bg-indigo-500/20"
+        >
+          <Landmark className="w-4 h-4" />
+          Manage Bank
+        </Link>
       </div>
 
       {!kycApproved && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Withdrawals are disabled until KYC is submitted and approved. Open <strong className="text-white">Account → KYC</strong> to upload Aadhaar front & back, PAN, and your photo.
+          Withdrawals are disabled until KYC is submitted and approved. Open <strong className="text-white">Account → KYC</strong> to upload Aadhaar front & back, PAN, photo, and your bank details.
         </div>
       )}
 
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5">
         <h2 className="text-xl font-semibold text-white">Withdrawal Request</h2>
         <p className="text-sm text-slate-400 mt-1">
-          We never bypass business logic. Request amount is validated against both wallet balance and eligible amount.
+          Request amount is validated against both wallet balance and eligible amount. Payouts go to the bank account saved during KYC.
         </p>
       </div>
 
@@ -205,90 +156,43 @@ export default function SendWithdrawRequest() {
         </div>
       </div>
 
-      <form onSubmit={onSaveBank} className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5 space-y-4">
+      <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Landmark className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-base font-semibold text-white">1) Bank Account</h3>
+          <h3 className="text-base font-semibold text-white">Bank account on file</h3>
           {bank?.isComplete && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
         </div>
-        {bank?.isComplete && !editingBank && (
+        {bank?.isComplete ? (
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-1.5">
             <p className="text-sm text-white font-medium">{bank.accountHolderName}</p>
             <p className="text-xs text-slate-300">
               {bank.bankName} • {bank.accountNumberMasked} • IFSC {bank.ifscCode}
             </p>
             {bank.upiId && <p className="text-xs text-slate-400">UPI: {bank.upiId}</p>}
-            <button
-              type="button"
-              onClick={() => setEditingBank(true)}
-              className="mt-1 inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-200"
+            <Link
+              href="/userdashboard/profile/bank"
+              className="mt-1 inline-block text-xs text-indigo-300 hover:text-indigo-200"
             >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit bank details
-            </button>
+              Edit in Profile → Bank
+            </Link>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-2">
+            <p>No bank account on file. Add your details in Profile → Bank before requesting a withdrawal.</p>
+            <Link
+              href="/userdashboard/profile/bank"
+              className="inline-block text-xs text-amber-200 hover:text-white underline"
+            >
+              Go to Profile → Bank
+            </Link>
           </div>
         )}
-        <div className={`grid sm:grid-cols-2 gap-3 ${bank?.isComplete && !editingBank ? "hidden" : ""}`}>
-          <input
-            value={bankForm.accountHolderName}
-            onChange={(e) => setBankForm((s) => ({ ...s, accountHolderName: e.target.value }))}
-            placeholder="Account holder name"
-            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white"
-            required
-          />
-          <input
-            value={bankForm.bankName}
-            onChange={(e) => setBankForm((s) => ({ ...s, bankName: e.target.value }))}
-            placeholder="Bank name"
-            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white"
-            required
-          />
-          <input
-            value={bankForm.accountNumber}
-            onChange={(e) => setBankForm((s) => ({ ...s, accountNumber: e.target.value.replace(/[^\d]/g, "") }))}
-            placeholder="Account number"
-            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white"
-            required
-          />
-          <input
-            value={bankForm.ifscCode}
-            onChange={(e) => setBankForm((s) => ({ ...s, ifscCode: e.target.value.toUpperCase() }))}
-            placeholder="IFSC code"
-            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white"
-            required
-          />
-          <input
-            value={bankForm.upiId}
-            onChange={(e) => setBankForm((s) => ({ ...s, upiId: e.target.value }))}
-            placeholder="UPI ID (optional)"
-            className="sm:col-span-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white"
-          />
-        </div>
-        <div className={`flex items-center gap-2 ${bank?.isComplete && !editingBank ? "hidden" : ""}`}>
-          <button
-            type="submit"
-            disabled={savingBank}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {savingBank ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Bank Account
-          </button>
-          {bank?.isComplete && (
-            <button
-              type="button"
-              onClick={() => setEditingBank(false)}
-              className="rounded-xl border border-white/15 px-3 py-2 text-xs text-slate-300 hover:bg-white/5"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+      </div>
 
       <form onSubmit={onSubmitRequest} className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-base font-semibold text-white">2) Request Withdrawal</h3>
+          <h3 className="text-base font-semibold text-white">Request Withdrawal</h3>
         </div>
         <div className="relative max-w-sm">
           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
