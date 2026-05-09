@@ -917,11 +917,12 @@ export async function getMyTeamSummary(): Promise<ApiSuccess<TeamSummaryDto>> {
 export async function getMyTeamMembers(
   page = 1,
   limit = 20,
-  filters?: { type?: TeamTypeFilter; q?: string; level?: number }
+  filters?: { type?: TeamTypeFilter; q?: string; level?: number; community?: "left" | "right" }
 ): Promise<ApiSuccess<TeamMemberRow[]> & { meta: PaginatedMeta }> {
   const query = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (filters?.type) query.set("type", filters.type);
   if (filters?.q?.trim()) query.set("q", filters.q.trim());
+  if (filters?.community) query.set("community", filters.community);
   if (typeof filters?.level === "number" && Number.isFinite(filters.level) && filters.level > 0) {
     query.set("level", String(filters.level));
   }
