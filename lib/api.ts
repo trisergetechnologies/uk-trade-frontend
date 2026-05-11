@@ -386,6 +386,14 @@ export async function patchAdminPackageProduct(
   });
 }
 
+export type AdminUserActivePackageRow = {
+  publicId?: string;
+  amount: number;
+  planCode?: string;
+  planName?: string;
+  status?: string;
+};
+
 export type AdminUserRow = {
   id: string;
   userCode?: string;
@@ -395,6 +403,10 @@ export type AdminUserRow = {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+  /** True if the user has ever bought at least one package (any subscription record). */
+  hasPurchasedPackage?: boolean;
+  /** Subscriptions with status `active` (principal + plan shown for admin). */
+  activePackages?: AdminUserActivePackageRow[];
 };
 
 export async function getAdminUsers(params?: {
@@ -402,7 +414,10 @@ export async function getAdminUsers(params?: {
   limit?: number;
   q?: string;
   role?: string;
+  /** Account can log in when true; blocked when false. */
   isActive?: boolean;
+  /** Filter by whether the user has ever purchased a package. */
+  hasPurchasedPackage?: boolean;
 }): Promise<ApiSuccess<AdminUserRow[]> & { meta: PaginatedMeta }> {
   const q = new URLSearchParams({
     page: String(params?.page || 1),
@@ -411,6 +426,7 @@ export async function getAdminUsers(params?: {
   if (params?.q?.trim()) q.set('q', params.q.trim());
   if (params?.role?.trim()) q.set('role', params.role.trim());
   if (typeof params?.isActive === 'boolean') q.set('isActive', String(params.isActive));
+  if (typeof params?.hasPurchasedPackage === 'boolean') q.set('hasPurchasedPackage', String(params.hasPurchasedPackage));
   return apiFetch(`/api/admin/users?${q}`);
 }
 

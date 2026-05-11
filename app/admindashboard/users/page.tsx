@@ -12,7 +12,8 @@ export default function AdminUsersPage() {
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<"" | "active" | "inactive">("");
+  const [accountStatus, setAccountStatus] = useState<"" | "active" | "inactive">("");
+  const [packageFilter, setPackageFilter] = useState<"" | "purchased" | "none">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [confirmRow, setConfirmRow] = useState<AdminUserRow | null>(null);
@@ -22,8 +23,10 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       setError("");
-      const isActive = status === "" ? undefined : status === "active";
-      const res = await getAdminUsers({ page, limit: PAGE_SIZE, q, isActive });
+      const isActive = accountStatus === "" ? undefined : accountStatus === "active";
+      const hasPurchasedPackage =
+        packageFilter === "" ? undefined : packageFilter === "purchased" ? true : false;
+      const res = await getAdminUsers({ page, limit: PAGE_SIZE, q, isActive, hasPurchasedPackage });
       setRows(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
@@ -31,7 +34,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, q, status]);
+  }, [page, q, accountStatus, packageFilter]);
 
   useEffect(() => {
     load();
@@ -53,7 +56,9 @@ export default function AdminUsersPage() {
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-white flex items-center gap-2"><Users2 size={22} />Users</h1>
-          <p className="text-sm text-slate-400">Search, review, and control user account status.</p>
+          <p className="text-sm text-slate-400">
+            Search users, see who has bought packages and which plans are still active, and control login access.
+          </p>
           <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
             <AlertTriangle size={12} />
             Deactivate means user cannot login and cannot perform new actions; historical data remains intact.
@@ -70,27 +75,49 @@ export default function AdminUsersPage() {
             className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
           />
           <select
-            value={status}
+            value={accountStatus}
             onChange={(e) => {
               setPage(1);
-              setStatus(e.target.value as "" | "active" | "inactive");
+              setAccountStatus(e.target.value as "" | "active" | "inactive");
             }}
             className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            title="Whether the user account can log in"
           >
-            <option value="">All</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="">Account: all</option>
+            <option value="active">Account: can log in</option>
+            <option value="inactive">Account: blocked</option>
+          </select>
+          <select
+            value={packageFilter}
+            onChange={(e) => {
+              setPage(1);
+              setPackageFilter(e.target.value as "" | "purchased" | "none");
+            }}
+            className="w-full sm:w-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            title="Filter by whether the user has ever purchased a package"
+          >
+            <option value="">Packages: all</option>
+            <option value="purchased">Packages: bought at least one</option>
+            <option value="none">Packages: never bought</option>
           </select>
         </div>
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[760px] text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
+        <table className="w-full min-w-[960px] text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="text-xs uppercase text-slate-500 border-b border-white/10">
-            <tr><th className="px-4 py-3 text-left">User</th><th className="px-4 py-3 text-left">Email</th><th className="px-4 py-3 text-left">Role</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Actions</th></tr>
+            <tr>
+              <th className="px-4 py-3 text-left">User</th>
+              <th className="px-4 py-3 text-left">Email</th>
+              <th className="px-4 py-3 text-left">Role</th>
+              <th className="px-4 py-3 text-left">Account</th>
+              <th className="px-4 py-3 text-left">Purchases</th>
+              <th className="px-4 py-3 text-left min-w-[200px]">Active packages</th>
+              <th className="px-4 py-3 text-left">Actions</th>
+            </tr>
           </thead>
           <tbody>
-            {loading && <tr><td className="px-4 py-6 text-slate-500" colSpan={5}>Loading…</td></tr>}
+            {loading && <tr><td className="px-4 py-6 text-slate-500" colSpan={7}>Loading…</td></tr>}
             {!loading && rows.map((row) => (
               <tr key={row.id} className="border-b border-white/5">
                 <td className="px-4 py-3">
@@ -99,8 +126,35 @@ export default function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3">{row.email || "—"}</td>
                 <td className="px-4 py-3 capitalize">{row.role || "—"}</td>
-                <td className="px-4 py-3">{row.isActive ? "Active" : "Inactive"}</td>
+                <td className="px-4 py-3">{row.isActive ? "Can log in" : "Blocked"}</td>
                 <td className="px-4 py-3">
+                  {row.hasPurchasedPackage ? (
+                    <span className="text-emerald-300/90">Purchased</span>
+                  ) : (
+                    <span className="text-slate-500">No package yet</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 align-top whitespace-normal">
+                  {row.activePackages && row.activePackages.length > 0 ? (
+                    <ul className="space-y-1 text-xs">
+                      {row.activePackages.map((p) => (
+                        <li key={p.publicId || `${p.planCode}-${p.amount}`} className="text-slate-200">
+                          <span className="text-white font-medium">{p.planCode || p.planName || "Plan"}</span>
+                          {p.planName && p.planCode ? <span className="text-slate-500"> · {p.planName}</span> : null}
+                          <span className="text-slate-400">
+                            {" "}
+                            — {Number(p.amount).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : row.hasPurchasedPackage ? (
+                    <span className="text-xs text-slate-500">No active subscription (completed or none running)</span>
+                  ) : (
+                    <span className="text-xs text-slate-600">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 align-top">
                   <div className="flex items-center gap-2">
                     <Link href={`/admindashboard/users/${encodeURIComponent(row.userCode || row.id)}`} className="rounded border border-white/15 px-2 py-1 text-xs hover:bg-white/10">View</Link>
                     <button onClick={() => setConfirmRow(row)} className="rounded border border-white/15 px-2 py-1 text-xs hover:bg-white/10">
