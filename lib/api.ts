@@ -74,7 +74,7 @@ export async function apiFetchPublic(path: string): Promise<unknown> {
   return json;
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers = new Headers(options.headers || {});
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -97,7 +97,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   if (!response.ok) {
     throw new Error(buildHttpErrorMessage(response.status, json, rawText));
   }
-  return json;
+  return json as T;
 }
 
 export type KycStatus = 'unverified' | 'pending' | 'approved' | 'rejected';
