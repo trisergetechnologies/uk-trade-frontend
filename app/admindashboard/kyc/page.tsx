@@ -14,12 +14,19 @@ import {
 
 const PAGE_SIZE = 15;
 
-const ADMIN_KYC_DOCS: { kind: KycDocumentKind; label: string }[] = [
-  { kind: "aadhaarFront", label: "Aadhaar front" },
-  { kind: "aadhaarBack", label: "Aadhaar back" },
-  { kind: "pan", label: "PAN" },
-  { kind: "photo", label: "Photo" },
-];
+const KYC_DOC_LABELS: Record<KycDocumentKind, string> = {
+  aadhaar: "Aadhaar",
+  passbook: "Passbook / cheque",
+  aadhaarFront: "Aadhaar front (legacy)",
+  aadhaarBack: "Aadhaar back (legacy)",
+  pan: "PAN (legacy)",
+  photo: "Photo (legacy)",
+};
+
+function docButtonsForRow(row: AdminKycRow): { kind: KycDocumentKind; label: string }[] {
+  const kinds = row.kyc.documents ?? [];
+  return kinds.map((kind) => ({ kind, label: KYC_DOC_LABELS[kind] ?? kind }));
+}
 
 export default function AdminKycPage() {
   const [rows, setRows] = useState<AdminKycRow[]>([]);
@@ -68,8 +75,8 @@ export default function AdminKycPage() {
     try {
       const blob = await getAdminKycDocumentBlob(userCode, kind);
       setPreview({ userCode, kind, url: URL.createObjectURL(blob) });
-    } catch {
-      setError("Could not load document.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load document.");
     }
   }
 
@@ -143,7 +150,9 @@ export default function AdminKycPage() {
               </tr>
             )}
             {!loading &&
-              rows.map((row) => (
+              rows.map((row) => {
+                const docButtons = docButtonsForRow(row);
+                return (
                 <tr key={row.userCode} className="border-b border-white/5 hover:bg-white/[0.04]">
                   <td className="px-4 py-3">
                     <p className="text-white font-medium">{row.name}</p>
@@ -157,18 +166,22 @@ export default function AdminKycPage() {
                   </td>
                   <td className="px-4 py-3">
                     {["pending", "approved", "rejected"].includes(row.kyc.status) ? (
-                      <div className="flex flex-wrap gap-1">
-                        {ADMIN_KYC_DOCS.map(({ kind, label }) => (
-                          <button
-                            key={kind}
-                            type="button"
-                            onClick={() => openDoc(row.userCode, kind)}
-                            className="rounded border border-white/15 px-2 py-0.5 text-xs text-indigo-300 hover:bg-white/10"
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
+                      docButtons.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {docButtons.map(({ kind, label }) => (
+                            <button
+                              key={kind}
+                              type="button"
+                              onClick={() => openDoc(row.userCode, kind)}
+                              className="rounded border border-white/15 px-2 py-0.5 text-xs text-indigo-300 hover:bg-white/10"
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">No files on record</span>
+                      )
                     ) : (
                       <span className="text-xs text-slate-500">—</span>
                     )}
@@ -204,7 +217,8 @@ export default function AdminKycPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
           </tbody>
         </table>
       </div>
@@ -242,7 +256,7 @@ export default function AdminKycPage() {
           <div className="max-w-3xl w-full max-h-[90vh] rounded-xl border border-white/10 bg-[#0b0f1a] flex flex-col">
             <div className="flex justify-between items-center px-4 py-3 border-b border-white/10">
               <span className="text-sm text-white">
-                {preview.userCode} · {ADMIN_KYC_DOCS.find((d) => d.kind === preview.kind)?.label ?? preview.kind}
+                {preview.userCode} · {KYC_DOC_LABELS[preview.kind] ?? preview.kind}
               </span>
               <button
                 type="button"

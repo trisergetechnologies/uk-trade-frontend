@@ -4,14 +4,74 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
 
 export { getToken };
 
+type ApiErrorJson = {
+  success?: boolean;
+  message?: string;
+  details?: {
+    fieldErrors?: Record<string, string[]>;
+    formErrors?: string[];
+  };
+};
+
+function flattenValidationDetails(details: ApiErrorJson['details']): string {
+  if (!details) return '';
+  const parts: string[] = [];
+  if (details.formErrors?.length) parts.push(...details.formErrors);
+  if (details.fieldErrors) {
+    for (const [key, msgs] of Object.entries(details.fieldErrors)) {
+      for (const m of msgs) parts.push(`${key}: ${m}`);
+    }
+  }
+  if (!parts.length) return '';
+  return ` ${parts.join(' ')}`;
+}
+
+function buildHttpErrorMessage(status: number, body: ApiErrorJson, fallbackText?: string): string {
+  let msg = typeof body.message === 'string' && body.message.trim() ? body.message.trim() : '';
+  if (!msg && fallbackText) {
+    msg = fallbackText.replace(/\s+/g, ' ').trim().slice(0, 400);
+  }
+  if (!msg) msg = `Request failed (HTTP ${status}).`;
+  const tail = flattenValidationDetails(body.details);
+  if (!tail) return msg;
+  const joiner = /[.!?]$/.test(msg) ? '' : '.';
+  return `${msg}${joiner}${tail}`;
+}
+
+function isLikelyNetworkFailure(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === 'TypeError') return true;
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(err.message);
+}
+
+function networkErrorMessage(): string {
+  return `Could not reach the server at ${API_BASE}. Check your internet connection. If you use a VPN or corporate network, try again or confirm the API address (NEXT_PUBLIC_API_BASE) is correct.`;
+}
+
+async function readJsonOrTextBody(response: Response): Promise<{ json: ApiErrorJson; rawText: string }> {
+  const rawText = await response.text();
+  if (!rawText) return { json: {}, rawText: '' };
+  try {
+    return { json: JSON.parse(rawText) as ApiErrorJson, rawText };
+  } catch {
+    return { json: {}, rawText };
+  }
+}
+
 /** Public GET (no auth header). Used for referrer lookup on register. */
 export async function apiFetchPublic(path: string): Promise<unknown> {
-  const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-  const data = (await response.json().catch(() => ({}))) as { message?: string };
-  if (!response.ok) {
-    throw new Error(data.message || `API error: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) throw new Error(networkErrorMessage());
+    throw e instanceof Error ? e : new Error(String(e));
   }
-  return data;
+  const { json, rawText } = await readJsonOrTextBody(response);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage(response.status, json, rawText));
+  }
+  return json;
 }
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
@@ -21,17 +81,23 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   if (!isFormData) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    cache: 'no-store',
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || `API error: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      cache: 'no-store',
+    });
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) throw new Error(networkErrorMessage());
+    throw e instanceof Error ? e : new Error(String(e));
   }
-  return data;
+
+  const { json, rawText } = await readJsonOrTextBody(response);
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage(response.status, json, rawText));
+  }
+  return json;
 }
 
 export type KycStatus = 'unverified' | 'pending' | 'approved' | 'rejected';
@@ -104,18 +170,26 @@ export async function patchMyPassword(body: {
   });
 }
 
+export type KycDocumentKind =
+  | 'aadhaar'
+  | 'passbook'
+  | 'aadhaarFront'
+  | 'aadhaarBack'
+  | 'pan'
+  | 'photo';
+
 export type KycSummary = {
   status: KycStatus;
   submittedAt?: string | null;
   reviewedAt?: string | null;
   reviewReason?: string;
+  /** Which uploaded files exist for this user (new flow: aadhaar + passbook; legacy rows may list older kinds). */
+  documents?: KycDocumentKind[];
 };
 
 export async function getMyKyc(): Promise<ApiSuccess<KycSummary>> {
   return apiFetch('/api/kyc/me');
 }
-
-export type KycDocumentKind = 'aadhaarFront' | 'aadhaarBack' | 'pan' | 'photo';
 
 export type KycBankInput = {
   accountHolderName: string;
@@ -126,17 +200,13 @@ export type KycBankInput = {
 };
 
 export async function postKycSubmit(body: {
-  aadhaarFront: File;
-  aadhaarBack: File;
-  pan: File;
-  photo: File;
+  aadhaar: File;
+  passbook: File;
   bank: KycBankInput;
 }): Promise<ApiSuccess<KycSummary>> {
   const form = new FormData();
-  form.append('aadhaarFront', body.aadhaarFront);
-  form.append('aadhaarBack', body.aadhaarBack);
-  form.append('pan', body.pan);
-  form.append('photo', body.photo);
+  form.append('aadhaar', body.aadhaar);
+  form.append('passbook', body.passbook);
   form.append('accountHolderName', body.bank.accountHolderName);
   form.append('bankName', body.bank.bankName);
   form.append('accountNumber', body.bank.accountNumber);
@@ -148,15 +218,30 @@ export async function postKycSubmit(body: {
   });
 }
 
+async function throwIfNotOkWithBody(res: Response): Promise<void> {
+  if (res.ok) return;
+  const rawText = await res.text();
+  let json: ApiErrorJson = {};
+  try {
+    json = rawText ? (JSON.parse(rawText) as ApiErrorJson) : {};
+  } catch {
+    /* leave json empty */
+  }
+  throw new Error(buildHttpErrorMessage(res.status, json, rawText));
+}
+
 export async function getMyKycDocumentBlob(kind: KycDocumentKind): Promise<Blob> {
   const token = getToken();
   const headers = new Headers();
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(`${API_BASE}/api/kyc/me/document/${kind}`, { headers, cache: 'no-store' });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(err.message || `Failed to fetch document (${res.status})`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/kyc/me/document/${kind}`, { headers, cache: 'no-store' });
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) throw new Error(networkErrorMessage());
+    throw e instanceof Error ? e : new Error(String(e));
   }
+  if (!res.ok) await throwIfNotOkWithBody(res);
   return res.blob();
 }
 
@@ -194,11 +279,17 @@ export async function getAdminKycDocumentBlob(userCode: string, kind: KycDocumen
   const token = getToken();
   const headers = new Headers();
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(`${API_BASE}/api/admin/media/kyc/${encodeURIComponent(userCode)}/${kind}`, {
-    headers,
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`Failed to fetch KYC document (${res.status})`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/admin/media/kyc/${encodeURIComponent(userCode)}/${kind}`, {
+      headers,
+      cache: 'no-store',
+    });
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) throw new Error(networkErrorMessage());
+    throw e instanceof Error ? e : new Error(String(e));
+  }
+  if (!res.ok) await throwIfNotOkWithBody(res);
   return res.blob();
 }
 
@@ -285,8 +376,14 @@ export async function getAdminPaymentProofBlob(id: string): Promise<Blob> {
   const token = getToken();
   const headers = new Headers();
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(`${API_BASE}/api/admin/media/payment-proof/${id}`, { headers, cache: 'no-store' });
-  if (!res.ok) throw new Error(`Failed to fetch payment proof: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/admin/media/payment-proof/${id}`, { headers, cache: 'no-store' });
+  } catch (e) {
+    if (isLikelyNetworkFailure(e)) throw new Error(networkErrorMessage());
+    throw e instanceof Error ? e : new Error(String(e));
+  }
+  if (!res.ok) await throwIfNotOkWithBody(res);
   return res.blob();
 }
 

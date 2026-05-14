@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, IdCard, ImageIcon, Landmark, Loader2, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, IdCard, Landmark, Loader2, Upload, WalletCards } from "lucide-react";
 import {
   getMyBankAccount,
   getMyKyc,
@@ -12,12 +12,14 @@ import {
   type KycSummary,
 } from "@/lib/api";
 
-const KYC_DOC_VIEWS: { kind: KycDocumentKind; label: string }[] = [
-  { kind: "aadhaarFront", label: "Aadhaar front" },
-  { kind: "aadhaarBack", label: "Aadhaar back" },
-  { kind: "pan", label: "PAN" },
-  { kind: "photo", label: "Photo" },
-];
+const DOC_LABEL: Record<KycDocumentKind, string> = {
+  aadhaar: "Aadhaar",
+  passbook: "Passbook / cheque book",
+  aadhaarFront: "Aadhaar (front, legacy)",
+  aadhaarBack: "Aadhaar (back, legacy)",
+  pan: "PAN (legacy)",
+  photo: "Photo (legacy)",
+};
 
 type BankForm = {
   accountHolderName: string;
@@ -40,15 +42,18 @@ function statusLabel(s: KycSummary["status"]) {
   }
 }
 
+function documentViews(summary: KycSummary | null): { kind: KycDocumentKind; label: string }[] {
+  const kinds = summary?.documents ?? [];
+  return kinds.map((kind) => ({ kind, label: DOC_LABEL[kind] ?? kind }));
+}
+
 export default function KycSubmission() {
   const [summary, setSummary] = useState<KycSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [aadhaarFront, setAadhaarFront] = useState<File | null>(null);
-  const [aadhaarBack, setAadhaarBack] = useState<File | null>(null);
-  const [pan, setPan] = useState<File | null>(null);
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [aadhaar, setAadhaar] = useState<File | null>(null);
+  const [passbook, setPassbook] = useState<File | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [bankForm, setBankForm] = useState<BankForm>({
@@ -58,6 +63,8 @@ export default function KycSubmission() {
     ifscCode: "",
     upiId: "",
   });
+
+  const docViews = useMemo(() => documentViews(summary), [summary]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,9 +106,9 @@ export default function KycSubmission() {
     try {
       const blob = await getMyKycDocumentBlob(kind);
       setPreviewUrl(URL.createObjectURL(blob));
-    } catch {
+    } catch (err) {
       setPreviewKey(null);
-      setError("Could not load document preview.");
+      setError(err instanceof Error ? err.message : "Could not load document preview.");
     }
   }
 
@@ -121,8 +128,8 @@ export default function KycSubmission() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!aadhaarFront || !aadhaarBack || !pan || !photo) {
-      setError("Please upload Aadhaar front, Aadhaar back, PAN, and your photo.");
+    if (!aadhaar || !passbook) {
+      setError("Please upload your Aadhaar image and a passbook or cheque book image.");
       return;
     }
     const accountHolderName = bankForm.accountHolderName.trim();
@@ -136,10 +143,8 @@ export default function KycSubmission() {
     setSubmitting(true);
     try {
       const res = await postKycSubmit({
-        aadhaarFront,
-        aadhaarBack,
-        pan,
-        photo,
+        aadhaar,
+        passbook,
         bank: {
           accountHolderName,
           bankName,
@@ -149,10 +154,8 @@ export default function KycSubmission() {
         },
       });
       setSummary(res.data);
-      setAadhaarFront(null);
-      setAadhaarBack(null);
-      setPan(null);
-      setPhoto(null);
+      setAadhaar(null);
+      setPassbook(null);
       setBankForm((s) => ({ ...s, accountNumber: "" }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
@@ -182,7 +185,8 @@ export default function KycSubmission() {
         </Link>
         <h1 className="text-2xl font-semibold text-white mt-4">KYC verification</h1>
         <p className="text-sm text-slate-400 mt-2">
-          Upload Aadhaar front and back, PAN, and a clear photo of yourself. An admin must approve before you can request withdrawals.
+          Upload one clear image of your Aadhaar and one of your bank passbook or cheque book (showing account details).
+          An admin must approve before you can request withdrawals.
         </p>
       </div>
 
@@ -203,11 +207,11 @@ export default function KycSubmission() {
         ) : null}
       </div>
 
-      {st !== "unverified" && st !== "rejected" ? (
+      {st !== "unverified" && st !== "rejected" && docViews.length > 0 ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
           <p className="text-sm text-slate-300 font-medium">Your uploads</p>
           <div className="flex flex-wrap gap-2">
-            {KYC_DOC_VIEWS.map(({ kind, label }) => (
+            {docViews.map(({ kind, label }) => (
               <button
                 key={kind}
                 type="button"
@@ -225,9 +229,16 @@ export default function KycSubmission() {
         <div className="rounded-xl border border-white/10 overflow-hidden bg-black/40">
           <div className="flex justify-between items-center px-3 py-2 border-b border-white/10">
             <span className="text-sm text-slate-300">
-              {KYC_DOC_VIEWS.find((d) => d.kind === previewKey)?.label ?? previewKey}
+              {docViews.find((d) => d.kind === previewKey)?.label ?? DOC_LABEL[previewKey as KycDocumentKind] ?? previewKey}
             </span>
-            <button type="button" onClick={() => { setPreviewKey(null); setPreviewUrl(null); }} className="text-xs text-slate-400 hover:text-white">
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewKey(null);
+                setPreviewUrl(null);
+              }}
+              className="text-xs text-slate-400 hover:text-white"
+            >
               Close
             </button>
           </div>
@@ -243,7 +254,7 @@ export default function KycSubmission() {
 
           <label className="block space-y-2">
             <span className="text-sm text-slate-300 flex items-center gap-2">
-              <IdCard size={16} /> Aadhaar — front side
+              <IdCard size={16} /> Aadhaar (one image)
             </span>
             <span className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-2">
               <Upload size={18} className="text-slate-500" />
@@ -251,58 +262,27 @@ export default function KycSubmission() {
                 type="file"
                 accept="image/*"
                 className="text-sm text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-white"
-                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setAadhaarFront)}
+                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setAadhaar)}
               />
             </span>
-            {aadhaarFront ? <span className="text-xs text-slate-500">{aadhaarFront.name}</span> : null}
+            {aadhaar ? <span className="text-xs text-slate-500">{aadhaar.name}</span> : null}
           </label>
 
           <label className="block space-y-2">
             <span className="text-sm text-slate-300 flex items-center gap-2">
-              <IdCard size={16} /> Aadhaar — back side
+              <WalletCards size={16} /> Passbook or cheque book (image)
             </span>
+            <p className="text-xs text-slate-500">Must clearly show bank name and account number (same as below).</p>
             <span className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-2">
               <Upload size={18} className="text-slate-500" />
               <input
                 type="file"
                 accept="image/*"
                 className="text-sm text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-white"
-                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setAadhaarBack)}
+                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setPassbook)}
               />
             </span>
-            {aadhaarBack ? <span className="text-xs text-slate-500">{aadhaarBack.name}</span> : null}
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm text-slate-300 flex items-center gap-2">
-              <IdCard size={16} /> PAN card (image)
-            </span>
-            <span className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-2">
-              <Upload size={18} className="text-slate-500" />
-              <input
-                type="file"
-                accept="image/*"
-                className="text-sm text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-white"
-                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setPan)}
-              />
-            </span>
-            {pan ? <span className="text-xs text-slate-500">{pan.name}</span> : null}
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm text-slate-300 flex items-center gap-2">
-              <ImageIcon size={16} /> Your photo (selfie / passport-style)
-            </span>
-            <span className="flex items-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-2">
-              <Upload size={18} className="text-slate-500" />
-              <input
-                type="file"
-                accept="image/*"
-                className="text-sm text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-white"
-                onChange={(e) => pickImage(e.target.files?.[0] ?? null, setPhoto)}
-              />
-            </span>
-            {photo ? <span className="text-xs text-slate-500">{photo.name}</span> : null}
+            {passbook ? <span className="text-xs text-slate-500">{passbook.name}</span> : null}
           </label>
 
           <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-4">
