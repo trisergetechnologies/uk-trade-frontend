@@ -18,6 +18,7 @@ import {
   type PaginatedMeta,
 } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import { formatIstDateTime } from "@/lib/istDate";
 import WalletLedgerTable from "@/components/wallet/WalletLedgerTable";
 
 type Tab = "overview" | "ledger" | "credit" | "purchase" | "password";
@@ -271,13 +272,13 @@ export default function AdminUserDetailPage() {
               <p className="text-xs text-slate-500 mt-1">All subscription records for this user.</p>
             </div>
             {data.packages && data.packages.length > 0 ? (
-              <table className="w-full min-w-[520px] text-sm text-left">
+              <table className="w-full min-w-[640px] text-sm text-left">
                 <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
                   <tr>
                     <th className="px-4 py-3">Plan</th>
                     <th className="px-4 py-3">Amount</th>
                     <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Purchased</th>
+                    <th className="px-4 py-3">Purchased (IST)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,9 +292,8 @@ export default function AdminUserDetailPage() {
                       </td>
                       <td className="px-4 py-3">{formatInr(pkg.amount)}</td>
                       <td className="px-4 py-3 capitalize">{pkg.status}</td>
-                      <td className="px-4 py-3 text-slate-400">
-                        {pkg.purchaseDateIst ||
-                          (pkg.purchaseAtUtc ? new Date(pkg.purchaseAtUtc).toLocaleDateString() : "—")}
+                      <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                        {formatIstDateTime(pkg.purchaseAtUtc)}
                       </td>
                     </tr>
                   ))}
