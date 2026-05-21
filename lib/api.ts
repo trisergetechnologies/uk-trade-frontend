@@ -586,6 +586,15 @@ export async function getAdminUserDetail(userCode: string): Promise<ApiSuccess<A
   return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}`);
 }
 
+export async function getAdminUserWalletLedger(
+  userCode: string,
+  page = 1,
+  limit = 20
+): Promise<PaginatedLedger> {
+  const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/wallet/ledger?${q}`);
+}
+
 export async function patchAdminUserStatus(userCode: string, isActive: boolean): Promise<ApiSuccess<AdminUserRow>> {
   return apiFetch(`/api/admin/users/${encodeURIComponent(userCode)}/status`, {
     method: 'PATCH',

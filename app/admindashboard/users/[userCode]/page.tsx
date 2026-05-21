@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import {
   getAdminUserDetail,
   getAdminUserPassword,
+  getAdminUserWalletLedger,
   postAdminCreditUser,
   postAdminPurchaseForUser,
   getAdminPlans,
@@ -13,10 +14,15 @@ import {
   type AdminPackageProductRow,
   type AdminPlanRow,
   type AdminUserDetailDto,
+  type LedgerRow,
+  type PaginatedMeta,
 } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import WalletLedgerTable from "@/components/wallet/WalletLedgerTable";
 
-type Tab = "overview" | "credit" | "purchase" | "password";
+type Tab = "overview" | "ledger" | "credit" | "purchase" | "password";
+
+const LEDGER_PAGE_SIZE = 20;
 
 export default function AdminUserDetailPage() {
   const params = useParams<{ userCode: string }>();
@@ -41,6 +47,12 @@ export default function AdminUserDetailPage() {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordErr, setPasswordErr] = useState("");
 
+  const [ledgerRows, setLedgerRows] = useState<LedgerRow[]>([]);
+  const [ledgerMeta, setLedgerMeta] = useState<PaginatedMeta | null>(null);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [ledgerError, setLedgerError] = useState("");
+
   useEffect(() => {
     if (!userCode) return;
     (async () => {
@@ -52,6 +64,29 @@ export default function AdminUserDetailPage() {
       }
     })();
   }, [userCode]);
+
+  useEffect(() => {
+    if (tab !== "ledger" || !userCode) return;
+    let cancelled = false;
+    (async () => {
+      setLedgerLoading(true);
+      setLedgerError("");
+      try {
+        const res = await getAdminUserWalletLedger(userCode, ledgerPage, LEDGER_PAGE_SIZE);
+        if (!cancelled) {
+          setLedgerRows(res.data || []);
+          setLedgerMeta(res.meta || null);
+        }
+      } catch (err) {
+        if (!cancelled) setLedgerError(err instanceof Error ? err.message : "Failed to load ledger");
+      } finally {
+        if (!cancelled) setLedgerLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, userCode, ledgerPage]);
 
   useEffect(() => {
     if (tab !== "purchase") return;
@@ -83,6 +118,7 @@ export default function AdminUserDetailPage() {
       setCreditNote("");
       const res = await getAdminUserDetail(userCode);
       setData(res.data);
+      if (tab === "ledger") setLedgerPage(1);
     } catch (err) {
       setCreditMsg({ err: err instanceof Error ? err.message : "Failed" });
     } finally {
@@ -100,6 +136,7 @@ export default function AdminUserDetailPage() {
       setPurchaseMsg({ ok: "Package purchased on behalf of user (wallet debited)." });
       const res = await getAdminUserDetail(userCode);
       setData(res.data);
+      if (tab === "ledger") setLedgerPage(1);
     } catch (err) {
       setPurchaseMsg({ err: err instanceof Error ? err.message : "Purchase failed" });
     } finally {
@@ -147,6 +184,7 @@ export default function AdminUserDetailPage() {
         {(
           [
             ["overview", "Overview"],
+            ["ledger", "Wallet ledger"],
             ["credit", "Credit funds"],
             ["purchase", "Buy package"],
             ["password", "Password"],
@@ -277,6 +315,34 @@ export default function AdminUserDetailPage() {
             </div>
           </div>
         </>
+      )}
+
+      {tab === "ledger" && (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs text-slate-500">Current balance</p>
+              <p className="text-lg text-white font-semibold">{formatInr(data.wallet?.balance || 0)}</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs text-slate-500">Eligible to withdraw</p>
+              <p className="text-lg text-white font-semibold">{formatInr(data.wallet?.eligibleToWithdraw || 0)}</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-400">
+            Full wallet history for this user — all credits and debits, including sponsor and matching income sources.
+          </p>
+          {ledgerError && <p className="text-sm text-red-400">{ledgerError}</p>}
+          <WalletLedgerTable
+            rows={ledgerRows}
+            loading={ledgerLoading}
+            meta={ledgerMeta}
+            page={ledgerPage}
+            pageSize={LEDGER_PAGE_SIZE}
+            onPageChange={setLedgerPage}
+            emptyMessage="No wallet transactions for this user yet."
+          />
+        </div>
       )}
 
       {tab === "credit" && (
