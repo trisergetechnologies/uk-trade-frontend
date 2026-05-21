@@ -1,8 +1,10 @@
 "use client";
 
-import { Menu, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAuthMe, type AuthUser } from "@/lib/api";
+import { clearAuthToken } from "@/lib/session";
 import SiteLogo from "@/components/brand/SiteLogo";
 
 type DashboardNavbarProps = {
@@ -10,7 +12,14 @@ type DashboardNavbarProps = {
 };
 
 export default function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+
+  function logout() {
+    clearAuthToken();
+    router.replace("/login");
+    router.refresh();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +92,16 @@ export default function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
             {codeLine && <span className="text-[11px] text-indigo-300 truncate">{codeLine}</span>}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={logout}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-200"
+          aria-label="Log out"
+        >
+          <LogOut size={18} className="shrink-0" />
+          <span className="hidden sm:inline">Log out</span>
+        </button>
       </div>
     </header>
   );
