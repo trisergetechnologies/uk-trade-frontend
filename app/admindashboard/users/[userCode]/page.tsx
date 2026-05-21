@@ -171,7 +171,101 @@ export default function AdminUserDetailPage() {
             <p className="text-slate-400 text-sm">Status: {data.user.isActive ? "Active" : "Inactive"}</p>
             <p className="text-slate-400 text-sm">Referral code: {data.user.referralCode}</p>
             <p className="text-slate-400 text-sm capitalize">Preferred community: {data.user.preferredCommunity}</p>
+            {data.treeNode && (
+              <p className="text-slate-400 text-sm capitalize">
+                Tree position: {data.treeNode.community} branch, {data.treeNode.side} side, level {data.treeNode.level}
+              </p>
+            )}
           </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <h2 className="text-sm font-medium text-white mb-2">Referred by</h2>
+            {data.referrer ? (
+              <div className="text-sm text-slate-300 space-y-1">
+                <p>
+                  <span className="text-slate-500">Name:</span> {data.referrer.name}
+                </p>
+                <p>
+                  <span className="text-slate-500">User code:</span> {data.referrer.userCode}
+                </p>
+                <p>
+                  <span className="text-slate-500">Email:</span> {data.referrer.email}
+                </p>
+                {data.referrer.referralCode && (
+                  <p>
+                    <span className="text-slate-500">Referral code:</span> {data.referrer.referralCode}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No referrer (direct signup or system root).</p>
+            )}
+          </div>
+
+          {data.teamSummary && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-white">Left & right community</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-emerald-300/80">Left branch</p>
+                  <p className="text-slate-400 text-sm">Members: {data.teamSummary.myLeftMembers}</p>
+                  <p className="text-white font-semibold">{formatInr(data.teamSummary.myLeftInvestment)}</p>
+                  <p className="text-xs text-slate-500">Total investment in left downline</p>
+                </div>
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-indigo-300/80">Right branch</p>
+                  <p className="text-slate-400 text-sm">Members: {data.teamSummary.myRightMembers}</p>
+                  <p className="text-white font-semibold">{formatInr(data.teamSummary.myRightInvestment)}</p>
+                  <p className="text-xs text-slate-500">Total investment in right downline</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">
+                Team totals: {data.teamSummary.totalMembers} members ({data.teamSummary.activeMembers} active) · Left
+                community tag: {data.teamSummary.leftCommunityMembers} · Right community tag:{" "}
+                {data.teamSummary.rightCommunityMembers}
+              </p>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-x-auto">
+            <div className="p-5 border-b border-white/10">
+              <h2 className="text-sm font-medium text-white">Packages purchased</h2>
+              <p className="text-xs text-slate-500 mt-1">All subscription records for this user.</p>
+            </div>
+            {data.packages && data.packages.length > 0 ? (
+              <table className="w-full min-w-[520px] text-sm text-left">
+                <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Plan</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Purchased</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.packages.map((pkg) => (
+                    <tr key={pkg.publicId || `${pkg.planCode}-${pkg.purchaseAtUtc}`} className="border-b border-white/5">
+                      <td className="px-4 py-3 text-slate-300">
+                        {pkg.planName || pkg.planCode || "—"}
+                        {pkg.planCode && pkg.planName ? (
+                          <span className="text-slate-500 text-xs ml-1">({pkg.planCode})</span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">{formatInr(pkg.amount)}</td>
+                      <td className="px-4 py-3 capitalize">{pkg.status}</td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {pkg.purchaseDateIst ||
+                          (pkg.purchaseAtUtc ? new Date(pkg.purchaseAtUtc).toLocaleDateString() : "—")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="px-5 py-6 text-sm text-slate-500">No packages purchased yet.</p>
+            )}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
               <p className="text-xs text-slate-500">Wallet balance</p>

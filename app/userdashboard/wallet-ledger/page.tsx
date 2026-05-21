@@ -7,6 +7,32 @@ import { formatInr } from "@/lib/formatInr";
 
 const PAGE_SIZE = 15;
 
+const CONTEXT_LABELS: Record<string, string> = {
+  sponsor_income: "Sponsor income",
+  matching_income: "Matching income",
+  trade_income: "Trade income",
+  package_purchase: "Package purchase",
+  fund_transfer_in: "Fund transfer in",
+  fund_transfer_out: "Fund transfer out",
+  admin_credit: "Admin credit",
+  withdrawal_approved: "Withdrawal approved",
+  fund_request_approval: "Fund request approved",
+};
+
+function ledgerTypeLabel(contextType: string) {
+  return CONTEXT_LABELS[contextType] || contextType.replace(/_/g, " ");
+}
+
+function ledgerSourceText(row: LedgerRow) {
+  if (row.sourceLabel) return row.sourceLabel;
+  if (row.sourceName && row.sourceUserCode) return `${row.sourceName} (${row.sourceUserCode})`;
+  if (row.sourceName) return row.sourceName;
+  if (row.contextType === "sponsor_income" || row.contextType === "matching_income") {
+    return "—";
+  }
+  return null;
+}
+
 export default function WalletLedgerPage() {
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
@@ -48,11 +74,12 @@ export default function WalletLedgerPage() {
         {error && <p className="text-sm text-amber-400">{error}</p>}
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-          <table className="w-full min-w-[640px] text-sm text-left whitespace-nowrap md:whitespace-normal">
+          <table className="w-full min-w-[720px] text-sm text-left whitespace-nowrap md:whitespace-normal">
             <thead className="border-b border-white/10 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3">When</th>
                 <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">From</th>
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Note</th>
               </tr>
@@ -60,37 +87,47 @@ export default function WalletLedgerPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-slate-500">
+                  <td colSpan={5} className="px-4 py-8 text-slate-500">
                     Loading…
                   </td>
                 </tr>
               )}
               {!loading &&
-                rows.map((r) => (
-                  <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.04]">
-                    <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
-                      {r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-slate-300">{r.contextType}</span>
-                      <span
-                        className={`ml-2 text-xs ${r.direction === "credit" ? "text-emerald-400" : "text-red-300"}`}
-                      >
-                        {r.direction}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {r.direction === "credit" ? "+" : "−"}
-                      {formatInr(r.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 max-w-xs truncate" title={r.notes}>
-                      {r.notes || "—"}
-                    </td>
-                  </tr>
-                ))}
+                rows.map((r) => {
+                  const source = ledgerSourceText(r);
+                  return (
+                    <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.04]">
+                      <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
+                        {r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-slate-300">{ledgerTypeLabel(r.contextType)}</span>
+                        <span
+                          className={`ml-2 text-xs ${r.direction === "credit" ? "text-emerald-400" : "text-red-300"}`}
+                        >
+                          {r.direction}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {source ? (
+                          <span title={r.sourceUserCode ? `User ${r.sourceUserCode}` : undefined}>{source}</span>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        {r.direction === "credit" ? "+" : "−"}
+                        {formatInr(r.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 max-w-xs truncate" title={r.notes}>
+                        {r.notes || "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
               {!loading && !rows.length && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-slate-500">
+                  <td colSpan={5} className="px-4 py-8 text-slate-500">
                     No ledger entries yet.
                   </td>
                 </tr>

@@ -554,11 +554,32 @@ export async function getAdminUserPasswordsList(params?: {
   return apiFetch(`/api/admin/user-passwords?${q}`);
 }
 
+export type AdminUserPackageRow = {
+  publicId?: string;
+  amount: number;
+  status: string;
+  planCode?: string;
+  planName?: string;
+  purchaseAtUtc?: string;
+  purchaseDateIst?: string;
+};
+
+export type AdminUserReferrerDto = {
+  userCode: string;
+  name: string;
+  email: string;
+  referralCode?: string;
+};
+
 export type AdminUserDetailDto = {
   user: AdminUserRow & { referralCode?: string; preferredCommunity?: string };
   wallet?: { balance: number; eligibleToWithdraw: number; updatedAt?: string };
   fundStats?: Array<{ id?: string; count: number }>;
   withdrawalStats?: Array<{ id?: string; count: number; amount?: number }>;
+  referrer?: AdminUserReferrerDto | null;
+  packages?: AdminUserPackageRow[];
+  teamSummary?: TeamSummaryDto;
+  treeNode?: { community: string; side: string; level: number } | null;
 };
 
 export async function getAdminUserDetail(userCode: string): Promise<ApiSuccess<AdminUserDetailDto>> {
@@ -735,6 +756,10 @@ export type LedgerRow = {
   notes?: string;
   createdAt?: string;
   packageSubscriptionId?: string | null;
+  /** Purchaser / trigger member for sponsor_income and matching_income */
+  sourceName?: string;
+  sourceUserCode?: string;
+  sourceLabel?: string;
 };
 
 export type PaginatedLedger = {
