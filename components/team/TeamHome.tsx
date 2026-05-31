@@ -25,30 +25,45 @@ export default function TeamHome() {
   const [level, setLevel] = useState<string>("");
   const [view, setView] = useState<"members" | "tree">("tree");
 
-  async function loadData() {
-    try {
-      setLoading(true);
-      setError(null);
-      const summaryRes = await getMyTeamSummary();
-      setSummary(summaryRes.data);
-      if (view === "members") {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const summaryRes = await getMyTeamSummary();
+        if (!cancelled) setSummary(summaryRes.data);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load team");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (view !== "members") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
         const membersRes = await getMyTeamMembers(page, 12, {
           type,
           q: query || undefined,
           level: level ? Number(level) : undefined,
         });
+        if (cancelled) return;
         setRows(membersRes.data || []);
         setMeta(membersRes.meta || null);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load team");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load team");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadData();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [page, type, query, level, view]);
 
   const levelOptions = useMemo(() => {
@@ -197,6 +212,10 @@ export default function TeamHome() {
       </div>
       )}
 
+      <div className={view === "tree" ? "" : "hidden"}>
+        <TeamVisualTree loading={false} />
+      </div>
+
       {view === "members" ? (
       <div className="rounded-3xl p-[1px] bg-gradient-to-br from-indigo-500/40 via-purple-500/30 to-transparent">
         <div className="bg-[#0b0f1a]/90 rounded-3xl border border-white/10 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
@@ -238,9 +257,7 @@ export default function TeamHome() {
           </div>
         </div>
       </div>
-      ) : (
-        <TeamVisualTree loading={loading} />
-      )}
+      ) : null}
 
       {view === "members" && (
       <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
