@@ -26,7 +26,7 @@ export default function AdminUserTreePage() {
       <TeamVisualTree
         loading={false}
         variant="admin"
-        fetchFocusWindow={(targetUserCode) => getAdminUserTeamFocus(rootUserCode, targetUserCode)}
+        fetchFocusWindow={(targetUserCode, depth) => getAdminUserTeamFocus(rootUserCode, targetUserCode, depth)}
       />
     </div>
   );

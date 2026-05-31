@@ -689,12 +689,12 @@ export async function getAdminUserTeamTreeChildren(
 
 export async function getAdminUserTeamFocus(
   rootUserCode: string,
-  targetUserCode?: string
+  targetUserCode?: string,
+  depth = 5
 ): Promise<ApiSuccess<TeamFocusWindowDto>> {
-  const q = new URLSearchParams();
+  const q = new URLSearchParams({ depth: String(depth) });
   if (targetUserCode?.trim()) q.set('targetUserCode', targetUserCode.trim().toUpperCase());
-  const suffix = q.toString() ? `?${q}` : '';
-  return apiFetch(`/api/admin/users/${encodeURIComponent(rootUserCode)}/team/tree/focus${suffix}`);
+  return apiFetch(`/api/admin/users/${encodeURIComponent(rootUserCode)}/team/tree/focus?${q}`);
 }
 
 export type AdminAuditLogRow = {
@@ -1080,18 +1080,22 @@ export type TeamTreeNode = {
   memberUserCode: string;
   memberName: string;
   memberEmail: string;
+  /** True when member has an active package purchase. */
   memberIsActive: boolean;
   sponsorUserCode?: string;
   sponsorName?: string;
+  parentUserCode?: string;
   side: "left" | "right";
   community: "left" | "right";
   level: number;
+  relativeLevel?: number;
   joinedAt?: string;
   directChildrenCount?: number;
 };
 
 export type TeamTreeLevel = {
   level: number;
+  relativeLevel?: number;
   nodes: TeamTreeNode[];
 };
 
@@ -1106,7 +1110,7 @@ export type TeamTreeDto = {
 };
 
 export async function getMyTeamTree(
-  depth = 6,
+  depth = 5,
   nodes = 500
 ): Promise<ApiSuccess<TeamTreeDto>> {
   const q = new URLSearchParams({ depth: String(depth), nodes: String(nodes) });
@@ -1121,18 +1125,27 @@ export async function getMyTeamTreeChildren(
   return apiFetch(`/api/network/team/tree/children?${q}`);
 }
 
+export type TeamFocusLevel = {
+  relativeLevel: number;
+  absoluteLevel: number;
+  nodes: TeamTreeNode[];
+};
+
 export type TeamFocusWindowDto = {
   parent: TeamTreeNode | null;
   focus: TeamTreeNode | null;
   children: TeamTreeNode[];
   grandchildrenByParent: Record<string, TeamTreeNode[]>;
+  levels?: TeamFocusLevel[];
+  maxRelativeDepthApplied?: number;
   relation: "self" | "parent" | "descendant" | "admin_view";
 };
 
 export async function getMyTeamFocusWindow(
-  userCode?: string
+  userCode?: string,
+  depth = 5
 ): Promise<ApiSuccess<TeamFocusWindowDto>> {
-  const q = new URLSearchParams();
+  const q = new URLSearchParams({ depth: String(depth) });
   if (userCode?.trim()) q.set("userCode", userCode.trim().toUpperCase());
-  return apiFetch(`/api/network/team/tree/focus${q.toString() ? `?${q}` : ""}`);
+  return apiFetch(`/api/network/team/tree/focus?${q}`);
 }

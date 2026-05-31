@@ -112,13 +112,13 @@ export default function CommunitySplit() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatBlock
-          title="Left community users"
+          title="Left purchased members"
           value={String(data.myLeftMembers)}
           side="left"
           icon={<Users size={18} />}
         />
         <StatBlock
-          title="Right community users"
+          title="Right purchased members"
           value={String(data.myRightMembers)}
           side="right"
           icon={<Users size={18} />}
@@ -168,7 +168,7 @@ export default function CommunitySplit() {
                 <th className="px-4 py-3 text-left">User ID</th>
                 <th className="px-4 py-3 text-left">Sponsor</th>
                 <th className="px-4 py-3 text-left">Level</th>
-                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Package status</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +192,11 @@ export default function CommunitySplit() {
                       <p className="text-xs text-slate-500">{row.sponsorUserCode || "-"}</p>
                     </td>
                     <td className="px-4 py-3">Level {row.level}</td>
-                    <td className="px-4 py-3">{row.memberIsActive ? "Active" : "Inactive"}</td>
+                    <td className="px-4 py-3">
+                      <span className={row.memberIsActive ? "text-emerald-300" : "text-red-300"}>
+                        {row.memberIsActive ? "Active (purchased)" : "Inactive (no package)"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               {!loadingMembers && !members.length && (

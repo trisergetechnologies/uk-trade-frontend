@@ -108,7 +108,7 @@ export default function TeamHome() {
         <div className="p-[1px] rounded-2xl bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-transparent">
           <div className="bg-[#0b0f1a]/90 p-5 rounded-2xl border border-white/10 flex justify-between items-center">
             <div>
-              <p className="text-slate-400 text-sm">Active Members</p>
+              <p className="text-slate-400 text-sm">Active (Purchased)</p>
               <h2 className="text-2xl font-semibold mt-1">{summary?.activeMembers || 0}</h2>
             </div>
             <Users className="text-violet-400" />
@@ -117,8 +117,8 @@ export default function TeamHome() {
         <div className="p-[1px] rounded-2xl bg-gradient-to-br from-amber-500/30 via-orange-500/20 to-transparent">
           <div className="bg-[#0b0f1a]/90 p-5 rounded-2xl border border-white/10 flex justify-between items-center">
             <div>
-              <p className="text-slate-400 text-sm">Max Depth</p>
-              <h2 className="text-2xl font-semibold mt-1">Level {summary?.maxLevel || 0}</h2>
+              <p className="text-slate-400 text-sm">Inactive (No package)</p>
+              <h2 className="text-2xl font-semibold mt-1">{summary?.inactiveMembers || 0}</h2>
             </div>
             <Layers className="text-amber-400" />
           </div>
@@ -226,7 +226,7 @@ export default function TeamHome() {
                   <span className="capitalize text-slate-300">{user.community}</span>
                   <div className="flex justify-end">
                     <span className={`px-2.5 py-1 text-xs rounded-full border ${user.memberIsActive ? "text-green-400 bg-green-500/10 border-green-500/20" : "text-red-400 bg-red-500/10 border-red-500/20"}`}>
-                      {user.memberIsActive ? "Active" : "Inactive"}
+                      {user.memberIsActive ? "Active (purchased)" : "Inactive (no package)"}
                     </span>
                   </div>
                 </div>
