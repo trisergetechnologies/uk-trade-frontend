@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import TeamVisualTree from "@/components/team/TeamVisualTree";
 import { getAdminUserTeamFocus } from "@/lib/api";
@@ -9,6 +10,11 @@ import { getAdminUserTeamFocus } from "@/lib/api";
 export default function AdminUserTreePage() {
   const params = useParams<{ userCode: string }>();
   const rootUserCode = decodeURIComponent(String(params?.userCode || "")).toUpperCase();
+
+  const fetchFocusWindow = useCallback(
+    (targetUserCode?: string, depth?: number) => getAdminUserTeamFocus(rootUserCode, targetUserCode, depth),
+    [rootUserCode]
+  );
 
   return (
     <div className="space-y-4">
@@ -23,11 +29,7 @@ export default function AdminUserTreePage() {
       </div>
       <h1 className="text-2xl font-semibold text-white">Team tree — {rootUserCode}</h1>
       <p className="text-sm text-slate-400">Admin view: same focus window as the member sees, rooted at this user.</p>
-      <TeamVisualTree
-        loading={false}
-        variant="admin"
-        fetchFocusWindow={(targetUserCode) => getAdminUserTeamFocus(rootUserCode, targetUserCode)}
-      />
+      <TeamVisualTree loading={false} variant="admin" cacheScope={rootUserCode} fetchFocusWindow={fetchFocusWindow} />
     </div>
   );
 }
