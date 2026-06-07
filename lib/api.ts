@@ -991,6 +991,7 @@ export type PackageRow = {
   principalAmount: number;
   status: string;
   purchaseDateIst?: string;
+  purchaseAtUtc?: string;
   firstEarningDateIst?: string;
   withdrawalDay1Ist?: string;
   workingDaysCredited?: number;

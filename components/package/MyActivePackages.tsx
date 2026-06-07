@@ -5,6 +5,14 @@ import Link from "next/link";
 import { Layers, Loader2, Package } from "lucide-react";
 import { getMyPackages, type PackageRow } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import { formatIstDate, formatIstDateTime } from "@/lib/istDate";
+
+function formatPackagePurchased(row: PackageRow): string {
+  if (row.purchaseAtUtc) return formatIstDateTime(row.purchaseAtUtc);
+  if (row.purchaseDateIst) return formatIstDate(row.purchaseDateIst);
+  if (row.createdAt) return formatIstDateTime(row.createdAt);
+  return "—";
+}
 
 function planFromRow(row: PackageRow) {
   const p = row.planId;
@@ -91,6 +99,9 @@ export default function MyActivePackages() {
                           <span className="text-slate-400 font-normal text-base ml-2">({plan.code})</span>
                         ) : null}
                       </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Purchased: <span className="text-slate-300">{formatPackagePurchased(row)}</span>
+                      </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-emerald-500/20 text-emerald-200 text-xs px-2.5 py-1 border border-emerald-500/30">
                       Running
@@ -119,12 +130,10 @@ export default function MyActivePackages() {
                         <dd className="text-white font-medium">{plan.maxWorkingDaysN}</dd>
                       </div>
                     )}
-                    {row.purchaseDateIst && (
-                      <div>
-                        <dt className="text-slate-500">Purchased (IST)</dt>
-                        <dd className="text-slate-200">{row.purchaseDateIst}</dd>
-                      </div>
-                    )}
+                    <div>
+                      <dt className="text-slate-500">Purchased on (IST)</dt>
+                      <dd className="text-slate-200">{formatPackagePurchased(row)}</dd>
+                    </div>
                     {typeof row.workingDaysCredited === "number" && (
                       <div>
                         <dt className="text-slate-500">Income days credited</dt>
@@ -150,10 +159,13 @@ export default function MyActivePackages() {
                   key={rowKey(row, i)}
                   className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-sm"
                 >
-                  <span className="text-slate-300">
-                    {plan?.name ?? "Plan"} {plan?.code ? `(${plan.code})` : ""}
-                  </span>
-                  <span className="text-slate-500">{formatInr(row.principalAmount)}</span>
+                  <div className="min-w-0">
+                    <span className="text-slate-300">
+                      {plan?.name ?? "Plan"} {plan?.code ? `(${plan.code})` : ""}
+                    </span>
+                    <p className="text-xs text-slate-500 mt-0.5">Purchased: {formatPackagePurchased(row)}</p>
+                  </div>
+                  <span className="text-slate-500 shrink-0">{formatInr(row.principalAmount)}</span>
                 </li>
               );
             })}

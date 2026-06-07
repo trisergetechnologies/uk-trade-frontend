@@ -18,10 +18,30 @@ export function toIstYmd(d: string | Date): string {
   }).format(typeof d === "string" ? new Date(d) : d);
 }
 
+function parseIstInput(value: string | Date): Date {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T00:00:00+05:30`);
+  }
+  return typeof value === "string" ? new Date(value) : value;
+}
+
+/** Calendar date in India timezone (e.g. for purchaseDateIst). */
+export function formatIstDate(value: string | Date | null | undefined): string {
+  if (value == null || value === "") return "—";
+  const d = parseIstInput(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: IST,
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(d);
+}
+
 /** Full date and time in India timezone (for admin timestamps, ledgers, etc.). */
 export function formatIstDateTime(value: string | Date | null | undefined): string {
   if (value == null || value === "") return "—";
-  const d = typeof value === "string" ? new Date(value) : value;
+  const d = parseIstInput(value);
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("en-IN", {
     timeZone: IST,
