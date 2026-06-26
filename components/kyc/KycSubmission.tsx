@@ -47,6 +47,11 @@ function documentViews(summary: KycSummary | null): { kind: KycDocumentKind; lab
   return kinds.map((kind) => ({ kind, label: DOC_LABEL[kind] ?? kind }));
 }
 
+function isLikelyImage(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(file.name);
+}
+
 export default function KycSubmission() {
   const [summary, setSummary] = useState<KycSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,8 +123,8 @@ export default function KycSubmission() {
       setter(null);
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (JPG or PNG).");
+    if (!isLikelyImage(file)) {
+      setError("Please choose an image file (JPG, PNG, WEBP, or HEIC).");
       return;
     }
     setter(file);
