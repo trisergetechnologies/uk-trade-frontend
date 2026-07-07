@@ -23,6 +23,34 @@ const KYC_DOC_LABELS: Record<KycDocumentKind, string> = {
   photo: "Photo (legacy)",
 };
 
+const EMPTY_BANK = {
+  accountHolderName: "",
+  bankName: "",
+  accountNumber: "",
+  ifscCode: "",
+  upiId: "",
+};
+
+function bankFromRow(row: AdminKycRow | null) {
+  if (!row?.bankAccount) return { ...EMPTY_BANK };
+  return {
+    accountHolderName: row.bankAccount.accountHolderName || "",
+    bankName: row.bankAccount.bankName || "",
+    accountNumber: row.bankAccount.accountNumber || "",
+    ifscCode: row.bankAccount.ifscCode || "",
+    upiId: row.bankAccount.upiId || "",
+  };
+}
+
+function isBankFormComplete(bank: typeof EMPTY_BANK) {
+  return Boolean(
+    bank.accountHolderName.trim() &&
+      bank.bankName.trim() &&
+      bank.accountNumber.trim() &&
+      bank.ifscCode.trim()
+  );
+}
+
 function docButtonsForRow(row: AdminKycRow): { kind: KycDocumentKind; label: string }[] {
   const kinds = row.kyc.documents ?? [];
   return kinds.map((kind) => ({ kind, label: KYC_DOC_LABELS[kind] ?? kind }));
@@ -40,7 +68,23 @@ export default function AdminKycPage() {
   const [reviewRow, setReviewRow] = useState<AdminKycRow | null>(null);
   const [reviewDecision, setReviewDecision] = useState<"approved" | "rejected">("approved");
   const [reviewReason, setReviewReason] = useState("");
+  const [reviewBank, setReviewBank] = useState(EMPTY_BANK);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const isDirectApproval = reviewRow?.kyc.status === "unverified";
+
+  function openReview(row: AdminKycRow, decision: "approved" | "rejected", reason: string) {
+    setReviewRow(row);
+    setReviewDecision(decision);
+    setReviewReason(reason);
+    setReviewBank(bankFromRow(row));
+    setError("");
+  }
+
+  function closeReview() {
+    setReviewRow(null);
+    setReviewBank(EMPTY_BANK);
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,7 +138,9 @@ export default function AdminKycPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">KYC</h1>
-          <p className="text-sm text-slate-400 mt-1">Review member identity documents. Approve before they can withdraw.</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Review member identity documents or approve KYC directly by entering bank details for the member.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-xs text-slate-500 uppercase tracking-wide">Status</label>
@@ -187,30 +233,32 @@ export default function AdminKycPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {row.kyc.status === "pending" ? (
+                    {row.kyc.status === "unverified" || row.kyc.status === "pending" ? (
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            setReviewRow(row);
-                            setReviewDecision("approved");
-                            setReviewReason("Documents verified.");
-                          }}
+                          onClick={() =>
+                            openReview(
+                              row,
+                              "approved",
+                              row.kyc.status === "unverified"
+                                ? "KYC approved by admin without document submission."
+                                : "Documents verified."
+                            )
+                          }
                           className="rounded-lg bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-500"
                         >
-                          Approve
+                          {row.kyc.status === "unverified" ? "Approve directly" : "Approve"}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReviewRow(row);
-                            setReviewDecision("rejected");
-                            setReviewReason("Please upload clearer images.");
-                          }}
-                          className="rounded-lg bg-red-600/90 px-2 py-1 text-xs text-white hover:bg-red-500"
-                        >
-                          Reject
-                        </button>
+                        {row.kyc.status === "pending" ? (
+                          <button
+                            type="button"
+                            onClick={() => openReview(row, "rejected", "Please upload clearer images.")}
+                            className="rounded-lg bg-red-600/90 px-2 py-1 text-xs text-white hover:bg-red-500"
+                          >
+                            Reject
+                          </button>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-xs text-slate-500">—</span>
@@ -279,32 +327,102 @@ export default function AdminKycPage() {
 
       {reviewRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-white font-medium">{reviewDecision === "approved" ? "Approve KYC" : "Reject KYC"}</h3>
-              <button onClick={() => setReviewRow(null)} className="rounded p-1 hover:bg-white/10">
+              <h3 className="text-white font-medium">
+                {reviewDecision === "approved"
+                  ? isDirectApproval
+                    ? "Direct KYC approval"
+                    : "Approve KYC"
+                  : "Reject KYC"}
+              </h3>
+              <button onClick={closeReview} className="rounded p-1 hover:bg-white/10">
                 <X size={18} />
               </button>
             </div>
             <p className="text-xs text-slate-400 mb-2">
               {reviewRow.name} ({reviewRow.userCode})
             </p>
+            {reviewDecision === "approved" ? (
+              <>
+                {isDirectApproval ? (
+                  <p className="text-xs text-amber-300 mb-3">
+                    This member has not submitted KYC documents. Enter bank details below and approve KYC without any
+                    uploaded files.
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400 mb-3">
+                    Confirm or update bank details before approving this submission.
+                  </p>
+                )}
+                <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs text-slate-500">Account holder name</span>
+                    <input
+                      value={reviewBank.accountHolderName}
+                      onChange={(e) => setReviewBank((b) => ({ ...b, accountHolderName: e.target.value }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs text-slate-500">Bank name</span>
+                    <input
+                      value={reviewBank.bankName}
+                      onChange={(e) => setReviewBank((b) => ({ ...b, bankName: e.target.value }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-500">Account number</span>
+                    <input
+                      value={reviewBank.accountNumber}
+                      onChange={(e) => setReviewBank((b) => ({ ...b, accountNumber: e.target.value }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-slate-500">IFSC code</span>
+                    <input
+                      value={reviewBank.ifscCode}
+                      onChange={(e) => setReviewBank((b) => ({ ...b, ifscCode: e.target.value.toUpperCase() }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs text-slate-500">UPI ID (optional)</span>
+                    <input
+                      value={reviewBank.upiId}
+                      onChange={(e) => setReviewBank((b) => ({ ...b, upiId: e.target.value }))}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                </div>
+              </>
+            ) : null}
             <textarea
               value={reviewReason}
               onChange={(e) => setReviewReason(e.target.value)}
               rows={4}
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
-              placeholder="Note to member (required)"
+              placeholder={
+                reviewDecision === "approved"
+                  ? "Note to member (optional)"
+                  : "Note to member (required)"
+              }
             />
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setReviewRow(null)} className="rounded border border-white/10 px-3 py-2 text-sm">
+              <button onClick={closeReview} className="rounded border border-white/10 px-3 py-2 text-sm">
                 Cancel
               </button>
               <button
                 disabled={reviewSubmitting}
                 onClick={async () => {
-                  if (!reviewReason.trim() || reviewReason.trim().length < 2) {
-                    setError("Enter a note (at least 2 characters).");
+                  if (reviewDecision === "rejected" && (!reviewReason.trim() || reviewReason.trim().length < 2)) {
+                    setError("Enter a rejection note (at least 2 characters).");
+                    return;
+                  }
+                  if (reviewDecision === "approved" && !isBankFormComplete(reviewBank)) {
+                    setError("Enter account holder, bank name, account number and IFSC before approving.");
                     return;
                   }
                   setReviewSubmitting(true);
@@ -312,9 +430,18 @@ export default function AdminKycPage() {
                   try {
                     await patchAdminKycReview(reviewRow.userCode, {
                       status: reviewDecision,
-                      reason: reviewReason.trim(),
+                      reason: reviewReason.trim() || undefined,
+                      ...(reviewDecision === "approved"
+                        ? {
+                            accountHolderName: reviewBank.accountHolderName.trim(),
+                            bankName: reviewBank.bankName.trim(),
+                            accountNumber: reviewBank.accountNumber.trim(),
+                            ifscCode: reviewBank.ifscCode.trim(),
+                            upiId: reviewBank.upiId.trim() || undefined,
+                          }
+                        : {}),
                     });
-                    setReviewRow(null);
+                    closeReview();
                     await load();
                   } catch (err) {
                     setError(err instanceof Error ? err.message : "Review failed");

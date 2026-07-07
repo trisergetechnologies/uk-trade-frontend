@@ -245,11 +245,22 @@ export async function getMyKycDocumentBlob(kind: KycDocumentKind): Promise<Blob>
   return res.blob();
 }
 
+export type AdminKycBankAccount = {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  upiId?: string;
+  isComplete?: boolean;
+};
+
 export type AdminKycRow = {
   userCode: string;
   name: string;
   email: string;
   kyc: KycSummary;
+  bankAccount?: AdminKycBankAccount;
+  bankComplete?: boolean;
   createdAt?: string;
 };
 
@@ -267,7 +278,15 @@ export async function getAdminKycList(
 
 export async function patchAdminKycReview(
   userCode: string,
-  body: { status: 'approved' | 'rejected'; reason: string }
+  body: {
+    status: 'approved' | 'rejected';
+    reason?: string;
+    accountHolderName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    upiId?: string;
+  }
 ): Promise<ApiSuccess<AdminKycRow>> {
   return apiFetch(`/api/admin/kyc/${encodeURIComponent(userCode)}/review`, {
     method: 'PATCH',

@@ -37,7 +37,9 @@ export default function WithdrawHome() {
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-6">
         <h2 className="text-2xl font-semibold text-white">Withdraw Funds</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Complete KYC verification, add your bank account, then request withdrawals based on eligible amount.
+          Trade income is credited daily but unlocks in one lump sum when each withdrawal cycle completes
+          (e.g. every 31 days on Plan B). On that day, approved KYC sends the full cycle amount to pending
+          withdrawal; otherwise it stays in eligible until KYC is done.
         </p>
       </div>
 
