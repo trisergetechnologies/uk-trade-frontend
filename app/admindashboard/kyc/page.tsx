@@ -14,6 +14,16 @@ import {
 
 const PAGE_SIZE = 15;
 
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "pending", label: "Pending" },
+  { value: "unverified", label: "Unverified" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+] as const;
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]["value"];
+
 const KYC_DOC_LABELS: Record<KycDocumentKind, string> = {
   aadhaar: "Aadhaar",
   passbook: "Passbook / cheque",
@@ -60,8 +70,11 @@ export default function AdminKycPage() {
   const [rows, setRows] = useState<AdminKycRow[]>([]);
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "unverified" | "all">("pending");
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
+  const [directQuery, setDirectQuery] = useState("");
+  const [directMatch, setDirectMatch] = useState<AdminKycRow | null>(null);
+  const [directLookupLoading, setDirectLookupLoading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<{ userCode: string; kind: KycDocumentKind; url: string } | null>(null);
@@ -90,7 +103,8 @@ export default function AdminKycPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await getAdminKycList(page, PAGE_SIZE, status, query);
+      const effectiveStatus = query.trim() ? "all" : status;
+      const res = await getAdminKycList(page, PAGE_SIZE, effectiveStatus, query);
       setRows(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
@@ -99,6 +113,62 @@ export default function AdminKycPage() {
       setLoading(false);
     }
   }, [page, query, status]);
+
+  useEffect(() => {
+    const term = directQuery.trim();
+    if (term.length < 2) {
+      setDirectMatch(null);
+      setDirectLookupLoading(false);
+      return;
+    }
+
+    setDirectLookupLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getAdminKycList(1, 5, "all", term);
+        const exact = res.data?.find((row) => row.userCode.toUpperCase() === term.toUpperCase());
+        setDirectMatch(exact || res.data?.[0] || null);
+      } catch {
+        setDirectMatch(null);
+      } finally {
+        setDirectLookupLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [directQuery]);
+
+  async function openDirectApproval() {
+    const term = directQuery.trim();
+    if (term.length < 2) {
+      setError("Enter a user code, name, or email to approve KYC directly.");
+      return;
+    }
+
+    setError("");
+    try {
+      const res = await getAdminKycList(1, 5, "all", term);
+      const exact = res.data?.find((row) => row.userCode.toUpperCase() === term.toUpperCase());
+      const row = exact || res.data?.[0];
+      if (!row) {
+        setError("No member found for that search.");
+        return;
+      }
+      if (!["unverified", "pending"].includes(row.kyc.status)) {
+        setError(`KYC for ${row.name} is already ${row.kyc.status}.`);
+        return;
+      }
+      openReview(
+        row,
+        "approved",
+        row.kyc.status === "unverified"
+          ? "KYC approved by admin without document submission."
+          : "Documents verified."
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not find member.");
+    }
+  }
 
   useEffect(() => {
     load();
@@ -142,19 +212,64 @@ export default function AdminKycPage() {
             Review member identity documents or approve KYC directly by entering bank details for the member.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="text-xs text-slate-500 uppercase tracking-wide">Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as typeof status)}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+      </div>
+
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
+        <div>
+          <h2 className="text-sm font-medium text-white">Direct KYC approval</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Search any member and approve KYC without using the status filter below.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            value={directQuery}
+            onChange={(e) => setDirectQuery(e.target.value)}
+            placeholder="User code, name, or email"
+            className="w-full sm:flex-1 rounded-lg border border-white/10 bg-[#0b0f1a] px-3 py-2 text-sm text-white"
+          />
+          <button
+            type="button"
+            onClick={() => void openDirectApproval()}
+            className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
           >
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="unverified">Unverified</option>
-            <option value="all">All</option>
-          </select>
+            Approve directly
+          </button>
+        </div>
+        {directLookupLoading ? (
+          <p className="text-xs text-slate-500">Looking up member…</p>
+        ) : directMatch ? (
+          <p className="text-xs text-slate-400">
+            Found: <span className="text-white">{directMatch.name}</span> ({directMatch.userCode}) · KYC{" "}
+            <span className="text-slate-300">{directMatch.kyc.status}</span>
+          </p>
+        ) : directQuery.trim().length >= 2 ? (
+          <p className="text-xs text-amber-400">No member found for this search.</p>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-500 uppercase tracking-wide mr-1">Status</span>
+          {STATUS_FILTERS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                setPage(1);
+                setStatus(opt.value);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                status === opt.value
+                  ? "bg-indigo-600 text-white"
+                  : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <input
             value={query}
             onChange={(e) => {
@@ -162,8 +277,11 @@ export default function AdminKycPage() {
               setQuery(e.target.value);
             }}
             placeholder="Search name, email, user code"
-            className="w-full sm:w-56 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            className="w-full sm:max-w-sm rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
           />
+          {query.trim() ? (
+            <p className="text-xs text-slate-500">Table search shows matches across all statuses.</p>
+          ) : null}
         </div>
       </div>
 
