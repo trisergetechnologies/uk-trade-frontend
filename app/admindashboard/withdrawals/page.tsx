@@ -22,6 +22,38 @@ function userLabel(row: WithdrawalRow) {
   return "—";
 }
 
+function userDetails(row: WithdrawalRow) {
+  const u = row.userId;
+  if (u && typeof u === "object") {
+    return {
+      name: u.name?.trim() || "—",
+      userCode: u.userCode?.trim() || "—",
+      email: u.email?.trim() || "—",
+    };
+  }
+  return { name: "—", userCode: "—", email: "—" };
+}
+
+function bankDetails(row: WithdrawalRow) {
+  const b = row.bankSnapshot;
+  if (!b) return null;
+  const hasAny = Boolean(
+    b.accountHolderName?.trim() ||
+      b.bankName?.trim() ||
+      b.accountLast4?.trim() ||
+      b.ifscCode?.trim() ||
+      b.upiId?.trim()
+  );
+  if (!hasAny) return null;
+  return {
+    accountHolderName: b.accountHolderName?.trim() || "—",
+    bankName: b.bankName?.trim() || "—",
+    accountLast4: b.accountLast4?.trim() || "",
+    ifscCode: b.ifscCode?.trim() || "—",
+    upiId: b.upiId?.trim() || "",
+  };
+}
+
 export default function AdminWithdrawalsPage() {
   const [rows, setRows] = useState<WithdrawalRow[]>([]);
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
@@ -234,13 +266,67 @@ export default function AdminWithdrawalsPage() {
       )}
             {reviewRow && (() => {
               const rd = resolveWithdrawalDeductions(reviewRow);
+              const user = userDetails(reviewRow);
+              const bank = bankDetails(reviewRow);
               return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6 max-h-[90vh] overflow-y-auto">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-white font-medium">{reviewDecision === "approved" ? "Approve" : "Reject"} withdrawal</h3>
               <button onClick={() => setReviewRow(null)} className="rounded p-1 hover:bg-white/10"><X size={18} /></button>
             </div>
+            <div className="mb-3 rounded-lg border border-indigo-500/25 bg-indigo-500/10 p-3 text-xs space-y-2">
+              <p className="text-[10px] uppercase tracking-wide text-indigo-300/90 font-medium">User</p>
+              <p className="flex justify-between gap-3 text-slate-400">
+                <span>Name</span>
+                <span className="text-white text-right">{user.name}</span>
+              </p>
+              <p className="flex justify-between gap-3 text-slate-400">
+                <span>User code</span>
+                <span className="text-white font-mono text-right">{user.userCode}</span>
+              </p>
+              <p className="flex justify-between gap-3 text-slate-400">
+                <span>Email</span>
+                <span className="text-white text-right break-all">{user.email}</span>
+              </p>
+              <p className="flex justify-between gap-3 text-slate-400">
+                <span>Request ID</span>
+                <span className="text-white font-mono text-right">{reviewRow.id}</span>
+              </p>
+            </div>
+            {bank ? (
+              <div className="mb-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs space-y-2">
+                <p className="text-[10px] uppercase tracking-wide text-emerald-300/90 font-medium">Payout bank account</p>
+                <p className="flex justify-between gap-3 text-slate-400">
+                  <span>Account holder</span>
+                  <span className="text-white text-right">{bank.accountHolderName}</span>
+                </p>
+                <p className="flex justify-between gap-3 text-slate-400">
+                  <span>Bank</span>
+                  <span className="text-white text-right">{bank.bankName}</span>
+                </p>
+                <p className="flex justify-between gap-3 text-slate-400">
+                  <span>Account</span>
+                  <span className="text-white font-mono text-right">
+                    {bank.accountLast4 ? `•••• ${bank.accountLast4}` : "—"}
+                  </span>
+                </p>
+                <p className="flex justify-between gap-3 text-slate-400">
+                  <span>IFSC</span>
+                  <span className="text-white font-mono text-right">{bank.ifscCode}</span>
+                </p>
+                {bank.upiId ? (
+                  <p className="flex justify-between gap-3 text-slate-400">
+                    <span>UPI</span>
+                    <span className="text-white text-right break-all">{bank.upiId}</span>
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                No bank snapshot on this request. Verify account in user profile before approving.
+              </div>
+            )}
             <div className="mb-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs space-y-1">
               <p className="flex justify-between text-slate-400"><span>Gross (wallet debit)</span><span className="text-white">{formatInr(rd.amount)}</span></p>
               <p className="flex justify-between text-slate-400"><span>TDS ({rd.tdsPercent}%)</span><span className="text-amber-200">− {formatInr(rd.tdsAmount)}</span></p>
