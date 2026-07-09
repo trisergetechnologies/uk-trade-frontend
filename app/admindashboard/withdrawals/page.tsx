@@ -36,21 +36,29 @@ function userDetails(row: WithdrawalRow) {
 
 function bankDetails(row: WithdrawalRow) {
   const b = row.bankSnapshot;
-  if (!b) return null;
+  const u = row.userId && typeof row.userId === "object" ? row.userId : null;
+  const userBank = u?.bankAccount;
+  const accountNumber =
+    b?.accountNumber?.trim() ||
+    userBank?.accountNumber?.trim() ||
+    "";
   const hasAny = Boolean(
-    b.accountHolderName?.trim() ||
-      b.bankName?.trim() ||
-      b.accountLast4?.trim() ||
-      b.ifscCode?.trim() ||
-      b.upiId?.trim()
+    b?.accountHolderName?.trim() ||
+      b?.bankName?.trim() ||
+      accountNumber ||
+      b?.accountLast4?.trim() ||
+      b?.ifscCode?.trim() ||
+      b?.upiId?.trim() ||
+      userBank?.accountHolderName?.trim()
   );
   if (!hasAny) return null;
   return {
-    accountHolderName: b.accountHolderName?.trim() || "—",
-    bankName: b.bankName?.trim() || "—",
-    accountLast4: b.accountLast4?.trim() || "",
-    ifscCode: b.ifscCode?.trim() || "—",
-    upiId: b.upiId?.trim() || "",
+    accountHolderName: b?.accountHolderName?.trim() || userBank?.accountHolderName?.trim() || "—",
+    bankName: b?.bankName?.trim() || userBank?.bankName?.trim() || "—",
+    accountNumber,
+    accountLast4: b?.accountLast4?.trim() || accountNumber.slice(-4),
+    ifscCode: b?.ifscCode?.trim() || userBank?.ifscCode?.trim() || "—",
+    upiId: b?.upiId?.trim() || userBank?.upiId?.trim() || "",
   };
 }
 
@@ -306,9 +314,9 @@ export default function AdminWithdrawalsPage() {
                   <span className="text-white text-right">{bank.bankName}</span>
                 </p>
                 <p className="flex justify-between gap-3 text-slate-400">
-                  <span>Account</span>
-                  <span className="text-white font-mono text-right">
-                    {bank.accountLast4 ? `•••• ${bank.accountLast4}` : "—"}
+                  <span>Account number</span>
+                  <span className="text-white font-mono text-right break-all">
+                    {bank.accountNumber || (bank.accountLast4 ? `•••• ${bank.accountLast4} (partial — re-request withdrawal for full number)` : "—")}
                   </span>
                 </p>
                 <p className="flex justify-between gap-3 text-slate-400">

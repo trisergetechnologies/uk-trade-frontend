@@ -814,12 +814,25 @@ export type WithdrawalRow = {
   bankSnapshot?: {
     accountHolderName?: string;
     bankName?: string;
+    accountNumber?: string;
     accountLast4?: string;
     ifscCode?: string;
     upiId?: string;
   };
   createdAt?: string;
-  userId?: string | { id?: string; name?: string; email?: string; userCode?: string };
+  userId?: string | {
+    id?: string;
+    name?: string;
+    email?: string;
+    userCode?: string;
+    bankAccount?: {
+      accountHolderName?: string;
+      bankName?: string;
+      accountNumber?: string;
+      ifscCode?: string;
+      upiId?: string;
+    };
+  };
 };
 
 export type PaginatedWithdrawals = {
