@@ -17,17 +17,27 @@ import {
 } from "lucide-react";
 import { getMyWithdrawals, type PaginatedMeta, type WithdrawalRow, type WithdrawalStatusFilter } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import { resolveWithdrawalDeductions } from "@/lib/withdrawalDeductions";
 
 const PAGE_SIZE = 10;
 
 type UiStatus = "Pending" | "Approved" | "Rejected";
 
-function toUi(row: WithdrawalRow): { id: string; amount: string; method: string; status: UiStatus; date: string } {
+function toUi(row: WithdrawalRow): {
+  id: string;
+  gross: string;
+  net: string;
+  method: string;
+  status: UiStatus;
+  date: string;
+} {
+  const d = resolveWithdrawalDeductions(row);
   const s: UiStatus =
     row.status === "pending" ? "Pending" : row.status === "approved" ? "Approved" : "Rejected";
   return {
     id: row.id,
-    amount: formatInr(row.amount),
+    gross: formatInr(d.amount),
+    net: formatInr(d.netPayable),
     method: row.bankSnapshot?.accountLast4
       ? `${row.bankSnapshot.bankName || "Bank"} ••••${row.bankSnapshot.accountLast4}`
       : "—",
@@ -170,7 +180,8 @@ export default function WithdrawHistory() {
             <table className="w-full min-w-[760px] text-sm whitespace-nowrap md:whitespace-normal">
               <thead className="text-slate-400 border-b border-white/10">
                 <tr>
-                  <th className="text-left py-4 px-6">Amount</th>
+                  <th className="text-left py-4 px-6">Gross</th>
+                  <th className="text-left py-4 px-6">Net payout</th>
                   <th className="text-left py-4 px-6">Note / reason</th>
                   <th className="text-left py-4 px-6">Status</th>
                   <th className="text-left py-4 px-6">Date</th>
@@ -179,14 +190,14 @@ export default function WithdrawHistory() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="py-6 px-6 text-slate-400">
+                    <td colSpan={5} className="py-6 px-6 text-slate-400">
                       Loading…
                     </td>
                   </tr>
                 )}
                 {!loading && !rows.length && (
                   <tr>
-                    <td colSpan={4} className="py-6 px-6 text-slate-400">
+                    <td colSpan={5} className="py-6 px-6 text-slate-400">
                       No withdrawals yet.
                     </td>
                   </tr>
@@ -201,7 +212,8 @@ export default function WithdrawHistory() {
                       transition={{ delay: i * 0.05 }}
                       className="border-b border-white/5 hover:bg-white/5 transition"
                     >
-                      <td className="py-4 px-6 text-white font-medium">{item.amount}</td>
+                      <td className="py-4 px-6 text-white font-medium">{item.gross}</td>
+                      <td className="py-4 px-6 text-emerald-300 font-medium">{item.net}</td>
                       <td className="py-4 px-6 text-slate-400">{item.method}</td>
                       <td className="py-4 px-6">
                         <span

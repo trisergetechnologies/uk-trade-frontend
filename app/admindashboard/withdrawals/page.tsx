@@ -10,6 +10,7 @@ import {
   type WithdrawalStatusFilter,
 } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import { resolveWithdrawalDeductions } from "@/lib/withdrawalDeductions";
 
 const PAGE_SIZE = 15;
 
@@ -70,14 +71,17 @@ export default function AdminWithdrawalsPage() {
   };
 
   const totalPages = meta?.totalPages ?? 1;
-  const pageAmountSum = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const pageGrossSum = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const pageNetSum = rows.reduce((s, r) => s + resolveWithdrawalDeductions(r).netPayable, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Withdrawals</h1>
-          <p className="text-sm text-slate-400 mt-1">User payout requests (paginated).</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Gross = wallet debit. Pay user the net amount after 5% TDS + 5% handling.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-xs text-slate-500 uppercase tracking-wide">Status</label>
@@ -100,12 +104,15 @@ export default function AdminWithdrawalsPage() {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
-        <table className="w-full min-w-[640px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
+        <table className="w-full min-w-[900px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">When</th>
               <th className="px-4 py-3">User</th>
-              <th className="px-4 py-3">Amount</th>
+              <th className="px-4 py-3">Gross</th>
+              <th className="px-4 py-3">TDS</th>
+              <th className="px-4 py-3">Handling</th>
+              <th className="px-4 py-3">Net payable</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Note</th>
               <th className="px-4 py-3">Actions</th>
@@ -114,26 +121,31 @@ export default function AdminWithdrawalsPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && !rows.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                   No withdrawals found.
                 </td>
               </tr>
             )}
             {!loading &&
-              rows.map((row, idx) => (
+              rows.map((row, idx) => {
+                const d = resolveWithdrawalDeductions(row);
+                return (
                 <tr key={row.id || `wd-${idx}`} className="border-b border-white/5 hover:bg-white/[0.04]">
                   <td className="px-4 py-3 whitespace-nowrap text-slate-400">
                     {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
                   </td>
                   <td className="px-4 py-3 text-white">{userLabel(row)}</td>
-                  <td className="px-4 py-3">{formatInr(row.amount)}</td>
+                  <td className="px-4 py-3">{formatInr(d.amount)}</td>
+                  <td className="px-4 py-3 text-amber-200/90">{formatInr(d.tdsAmount)}</td>
+                  <td className="px-4 py-3 text-amber-200/90">{formatInr(d.handlingAmount)}</td>
+                  <td className="px-4 py-3 text-emerald-300 font-medium">{formatInr(d.netPayable)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -181,7 +193,8 @@ export default function AdminWithdrawalsPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
           </tbody>
         </table>
       </div>
@@ -193,7 +206,9 @@ export default function AdminWithdrawalsPage() {
               Page <span className="text-white">{meta.page}</span> of {totalPages} ·{" "}
               <span className="text-white">{meta.total}</span> total
             </p>
-            <p className="text-xs text-slate-500 mt-1">Amount sum on this page: {formatInr(pageAmountSum)}</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Page gross: {formatInr(pageGrossSum)} · Net payable: {formatInr(pageNetSum)}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -217,14 +232,24 @@ export default function AdminWithdrawalsPage() {
           </div>
         </div>
       )}
-      {reviewRow && (
+            {reviewRow && (() => {
+              const rd = resolveWithdrawalDeductions(reviewRow);
+              return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#0b0f1a] p-6">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-white font-medium">{reviewDecision === "approved" ? "Approve" : "Reject"} withdrawal</h3>
               <button onClick={() => setReviewRow(null)} className="rounded p-1 hover:bg-white/10"><X size={18} /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-2">Amount: {formatInr(reviewRow.amount)}</p>
+            <div className="mb-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs space-y-1">
+              <p className="flex justify-between text-slate-400"><span>Gross (wallet debit)</span><span className="text-white">{formatInr(rd.amount)}</span></p>
+              <p className="flex justify-between text-slate-400"><span>TDS ({rd.tdsPercent}%)</span><span className="text-amber-200">− {formatInr(rd.tdsAmount)}</span></p>
+              <p className="flex justify-between text-slate-400"><span>Handling ({rd.handlingPercent}%)</span><span className="text-amber-200">− {formatInr(rd.handlingAmount)}</span></p>
+              <p className="flex justify-between border-t border-white/10 pt-2 font-medium text-slate-300">
+                <span>Transfer to user</span>
+                <span className="text-emerald-300">{formatInr(rd.netPayable)}</span>
+              </p>
+            </div>
             <textarea value={reviewReason} onChange={(e) => setReviewReason(e.target.value)} rows={4} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" placeholder="Enter admin note" />
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setReviewRow(null)} className="rounded border border-white/10 px-3 py-2 text-sm">Cancel</button>
@@ -253,7 +278,8 @@ export default function AdminWithdrawalsPage() {
             </div>
           </div>
         </div>
-      )}
+              );
+            })()}
     </div>
   );
 }

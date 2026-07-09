@@ -10,6 +10,7 @@ import {
   type BankAccountDto,
 } from "@/lib/api";
 import { formatInr } from "@/lib/formatInr";
+import { computeWithdrawalDeductions } from "@/lib/withdrawalDeductions";
 import {
   ArrowLeft,
   Building2,
@@ -57,6 +58,10 @@ export default function SendWithdrawRequest() {
 
   const numericAmount = Number(amount || 0);
   const maxAllowed = Math.min(walletBalance, eligibleToWithdraw);
+  const deductions = useMemo(
+    () => (numericAmount > 0 ? computeWithdrawalDeductions(numericAmount) : null),
+    [numericAmount]
+  );
   const canRequest =
     kycApproved &&
     bank?.isComplete &&
@@ -141,7 +146,8 @@ export default function SendWithdrawRequest() {
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5">
         <h2 className="text-xl font-semibold text-white">Withdrawal Request</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Request amount is validated against both wallet balance and eligible amount. Payouts go to the bank account saved during KYC.
+          Request amount is validated against wallet balance and eligible amount. A 5% TDS and 5% handling
+          charge (10% total) are deducted from each withdrawal; the net amount is paid to your bank after approval.
         </p>
       </div>
 
@@ -206,6 +212,26 @@ export default function SendWithdrawRequest() {
             className="w-full rounded-xl bg-white/5 border border-white/10 pl-9 pr-3 py-2.5 text-sm text-white"
           />
         </div>
+        {deductions && numericAmount >= MIN_AMOUNT && (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm space-y-1.5 max-w-sm">
+            <div className="flex justify-between text-slate-400">
+              <span>Requested (gross)</span>
+              <span className="text-white">{formatInr(numericAmount)}</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>TDS ({deductions.tdsPercent}%)</span>
+              <span className="text-amber-200">− {formatInr(deductions.tdsAmount)}</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>Handling ({deductions.handlingPercent}%)</span>
+              <span className="text-amber-200">− {formatInr(deductions.handlingAmount)}</span>
+            </div>
+            <div className="flex justify-between border-t border-white/10 pt-2 font-medium">
+              <span className="text-slate-300">You receive (net)</span>
+              <span className="text-emerald-300">{formatInr(deductions.netPayable)}</span>
+            </div>
+          </div>
+        )}
         <p className="text-xs text-slate-400">{requestHint}</p>
         <button
           type="submit"

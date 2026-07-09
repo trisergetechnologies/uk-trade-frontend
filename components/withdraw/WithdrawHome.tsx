@@ -37,9 +37,8 @@ export default function WithdrawHome() {
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-6">
         <h2 className="text-2xl font-semibold text-white">Withdraw Funds</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Trade income is credited daily but unlocks in one lump sum when each withdrawal cycle completes
-          (e.g. every 31 days on Plan B). On that day, approved KYC sends the full cycle amount to pending
-          withdrawal; otherwise it stays in eligible until KYC is done.
+          Trade income unlocks in one lump sum when each withdrawal cycle completes. Each withdrawal has
+          5% TDS and 5% handling (10% total) deducted; you receive the net amount after admin approval.
         </p>
       </div>
 

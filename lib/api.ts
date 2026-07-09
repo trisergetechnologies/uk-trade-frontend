@@ -804,6 +804,11 @@ export async function getWalletLedger(page = 1, limit = 20): Promise<PaginatedLe
 export type WithdrawalRow = {
   id: string;
   amount: number;
+  tdsPercent?: number;
+  handlingPercent?: number;
+  tdsAmount?: number;
+  handlingAmount?: number;
+  netPayable?: number;
   status: 'pending' | 'approved' | 'rejected';
   reviewReason?: string;
   bankSnapshot?: {
