@@ -129,7 +129,7 @@ export async function authRegister(body: {
   password: string;
   mobileNumber: string;
   referralCode: string;
-  community: 'left' | 'right';
+  community?: 'left' | 'right';
 }): Promise<AuthResponse> {
   return apiFetch('/api/auth/register', {
     method: 'POST',

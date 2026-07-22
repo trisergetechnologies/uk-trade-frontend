@@ -115,7 +115,11 @@ export default function EditProfile() {
             </div>
 
             <div>
-              <p className="text-sm text-slate-300 mb-2">Preferred community (default for referrals)</p>
+              <p className="text-sm text-slate-300 mb-2">Default side for members you refer</p>
+              <p className="text-xs text-slate-500 mb-2">
+                New members who join with your referral code are placed on this side of your team, unless your invite
+                link specifies a different side. Change this before sharing your code to build your left or right leg.
+              </p>
               <div className="flex gap-3">
                 {(["left", "right"] as const).map((side) => (
                   <label key={side} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/5">

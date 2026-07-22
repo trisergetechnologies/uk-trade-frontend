@@ -24,7 +24,9 @@ function RegisterForm() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [community, setCommunity] = useState<"left" | "right">("left");
+  // Empty = let the sponsor's preferred community decide placement.
+  // Only set when the referral link explicitly carries ?community=left|right.
+  const [community, setCommunity] = useState<"left" | "right" | "">("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sponsorPreview, setSponsorPreview] = useState<{ name: string } | null>(null);
@@ -72,7 +74,7 @@ function RegisterForm() {
         mobileNumber: mobileNumber.trim(),
         password,
         referralCode: referralCode.trim(),
-        community,
+        ...(community ? { community } : {}),
       });
       setAuthToken(res.data.token);
       router.push(safePostLoginPath(searchParams.get("from"), res.data.user.role));
@@ -178,21 +180,18 @@ function RegisterForm() {
             )}
           </div>
           <div>
-            <span className="block text-sm text-gray-300 mb-2">Preferred community</span>
-            <div className="flex gap-4">
-              {(["left", "right"] as const).map((side) => (
-                <label key={side} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="community"
-                    checked={community === side}
-                    onChange={() => setCommunity(side)}
-                    className="accent-blue-500"
-                  />
-                  <span className="capitalize">{side}</span>
-                </label>
-              ))}
-            </div>
+            <span className="block text-sm text-gray-300 mb-2">Community placement</span>
+            {community ? (
+              <p className="text-sm text-emerald-400/95">
+                You will be placed on your sponsor&apos;s{" "}
+                <span className="font-medium capitalize text-white">{community}</span> side (from your invite link).
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Your sponsor decides which side (left/right) you are placed on. This is set automatically from their
+                referral link.
+              </p>
+            )}
           </div>
 
           {error && (
