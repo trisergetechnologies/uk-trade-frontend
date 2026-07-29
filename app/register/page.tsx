@@ -74,7 +74,7 @@ function RegisterForm() {
         mobileNumber: mobileNumber.trim(),
         password,
         referralCode: referralCode.trim(),
-        ...(community ? { community } : {}),
+        community: community || "left",
       });
       setAuthToken(res.data.token);
       router.push(safePostLoginPath(searchParams.get("from"), res.data.user.role));
@@ -180,17 +180,24 @@ function RegisterForm() {
             )}
           </div>
           <div>
-            <span className="block text-sm text-gray-300 mb-2">Community placement</span>
-            {community ? (
-              <p className="text-sm text-emerald-400/95">
-                You will be placed on your sponsor&apos;s{" "}
-                <span className="font-medium capitalize text-white">{community}</span> side (from your invite link).
-              </p>
-            ) : (
-              <p className="text-xs text-gray-500">
-                Your sponsor decides which side (left/right) you are placed on. This is set automatically from their
-                referral link.
-              </p>
+            <span className="block text-sm text-gray-300 mb-2">Choose your placement side</span>
+            <div className="flex items-center gap-4">
+              {(["left", "right"] as const).map((side) => (
+                <label key={side} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="community"
+                    value={side}
+                    checked={community === side}
+                    onChange={() => setCommunity(side)}
+                    className="accent-indigo-500 w-4 h-4"
+                  />
+                  <span className="text-sm capitalize text-gray-200">{side} Side</span>
+                </label>
+              ))}
+            </div>
+            {!community && (
+              <p className="mt-1 text-xs text-amber-400">Please select a side to continue.</p>
             )}
           </div>
 
@@ -202,7 +209,7 @@ function RegisterForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !community}
             className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 py-3 font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {loading ? "Creating account…" : "Create account"}

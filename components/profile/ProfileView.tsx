@@ -8,7 +8,6 @@ import { getAuthMe, type AuthUser } from "@/lib/api";
 export default function ProfileView() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [shareSide, setShareSide] = useState<"left" | "right">("left");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -43,7 +42,7 @@ export default function ProfileView() {
   const initial = user.name?.[0] || "?";
   const referralUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/register?ref=${encodeURIComponent(user.referralCode || "")}&community=${shareSide}`
+      ? `${window.location.origin}/register?ref=${encodeURIComponent(user.referralCode || "")}`
       : "";
 
   async function onCopy() {
@@ -61,7 +60,7 @@ export default function ProfileView() {
       try {
         await navigator.share({
           title: "Join via my referral",
-          text: `Join with my referral and default community ${shareSide.toUpperCase()}.`,
+          text: "Join using my referral link!",
           url: referralUrl,
         });
       } catch {}
@@ -106,25 +105,6 @@ export default function ProfileView() {
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="shrink-0 text-slate-300 font-medium">Referral code</span>
                   <code className="ml-auto whitespace-nowrap text-right text-indigo-300">{user.referralCode}</code>
-                </div>
-                <div>
-                  <span className="text-slate-300 font-medium">Default community in link</span>
-                  <div className="mt-1 flex items-center gap-2">
-                    {(["left", "right"] as const).map((side) => (
-                      <button
-                        type="button"
-                        key={side}
-                        onClick={() => setShareSide(side)}
-                        className={`px-2 py-1 rounded-md border text-[11px] capitalize ${
-                          shareSide === side
-                            ? "border-indigo-400/30 bg-indigo-500/20 text-indigo-200"
-                            : "border-white/10 bg-white/5 text-slate-300"
-                        }`}
-                      >
-                        {side}
-                      </button>
-                    ))}
-                  </div>
                 </div>
                 <div className="flex min-w-0 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5">
                   <Link2 size={12} className="text-slate-500 shrink-0" />
