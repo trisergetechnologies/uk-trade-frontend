@@ -746,6 +746,42 @@ export async function getAdminAuditLogs(params?: {
   return apiFetch(`/api/admin/audit-logs?${q}`);
 }
 
+export type AdminTransactionLogRow = {
+  id: string;
+  type: 'wallet_credit' | 'package_purchase' | 'fund_request_approval';
+  dateTime: string;
+  customerName: string;
+  customerUserCode: string;
+  amount: number;
+  requestedAmount?: number | null;
+  note?: string;
+  adminName?: string | null;
+  adminUserCode?: string | null;
+  planName?: string | null;
+  planCode?: string | null;
+  packageName?: string | null;
+  packageCode?: string | null;
+};
+
+export async function getAdminTransactionLogs(params?: {
+  page?: number;
+  limit?: number;
+  type?: 'all' | 'wallet_credit' | 'package_purchase' | 'fund_request_approval';
+  q?: string;
+  from?: string;
+  to?: string;
+}): Promise<ApiSuccess<AdminTransactionLogRow[]> & { meta: PaginatedMeta }> {
+  const q = new URLSearchParams({
+    page: String(params?.page || 1),
+    limit: String(params?.limit || 20),
+    type: params?.type || 'all',
+  });
+  if (params?.q?.trim()) q.set('q', params.q.trim());
+  if (params?.from?.trim()) q.set('from', params.from.trim());
+  if (params?.to?.trim()) q.set('to', params.to.trim());
+  return apiFetch(`/api/admin/transaction-logs?${q}`);
+}
+
 export type HolidayRow = {
   id: string;
   exchange: string;
