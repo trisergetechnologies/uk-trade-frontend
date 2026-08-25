@@ -3,22 +3,19 @@
 import { useEffect, useState } from "react";
 import StatCard from "@/components/ui/StatCard";
 import {
-  getIncomeMatching,
-  getIncomeSponsor,
   getIncomeTrade,
   getMyPackages,
   getMyWithdrawalSummary,
   getWalletMe,
 } from "@/lib/api";
-import { totalIncomeAllTime } from "@/lib/incomeAggregates";
 import { formatInr } from "@/lib/formatInr";
 
 export default function TopStats() {
-  const [balance, setBalance] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [eligible, setEligible] = useState(0);
   const [tradeSum, setTradeSum] = useState(0);
-  const [sponsorSum, setSponsorSum] = useState(0);
-  const [matchingSum, setMatchingSum] = useState(0);
+  const [sponsorAvailable, setSponsorAvailable] = useState(0);
+  const [matchingAvailable, setMatchingAvailable] = useState(0);
   const [withdrawApproved, setWithdrawApproved] = useState(0);
   const [invested, setInvested] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -27,28 +24,22 @@ export default function TopStats() {
     let cancelled = false;
     (async () => {
       try {
-        const [walletRes, tradeRes, sponsorRes, matchRes, wdSummary, pkgRes] = await Promise.all([
+        const [walletRes, tradeRes, wdSummary, pkgRes] = await Promise.all([
           getWalletMe(),
           getIncomeTrade(),
-          getIncomeSponsor(),
-          getIncomeMatching(),
           getMyWithdrawalSummary(),
           getMyPackages(),
         ]);
         if (cancelled) return;
-        setBalance(walletRes.data?.balance ?? 0);
         setEligible(Number(walletRes.data?.eligibleToWithdraw) || 0);
-        const { trade, sponsor, matching } = totalIncomeAllTime(
-          tradeRes.data || [],
-          sponsorRes.data || [],
-          matchRes.data || []
-        );
+        setSponsorAvailable(Number(walletRes.data?.sponsorAvailable) || 0);
+        setMatchingAvailable(Number(walletRes.data?.matchingAvailable) || 0);
+        const trade = (tradeRes.data || []).reduce((s, r) => s + (Number(r.amount) || 0), 0);
         setTradeSum(trade);
-        setSponsorSum(sponsor);
-        setMatchingSum(matching);
         setWithdrawApproved(Number(wdSummary.data?.approvedTotal) || 0);
         const inv = (pkgRes.data || []).reduce((s, r) => s + (Number(r.principalAmount) || 0), 0);
         setInvested(inv);
+        setLoaded(true);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Could not load stats");
       }
@@ -58,8 +49,6 @@ export default function TopStats() {
     };
   }, []);
 
-  const totalIncome = tradeSum + sponsorSum + matchingSum;
-
   if (error) {
     return (
       <p className="text-sm text-amber-400/90">
@@ -68,20 +57,36 @@ export default function TopStats() {
     );
   }
 
-  if (balance === null) {
+  if (!loaded) {
     return (
-      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-28 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-      <StatCard title="Total Income" value={formatInr(totalIncome)} highlight />
-      <StatCard title="Balance" value={formatInr(balance)} highlight />
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <StatCard
+        title="Trade income"
+        value={formatInr(tradeSum)}
+        highlight
+        hint="Enters Eligible after each cycle completes"
+      />
+      <StatCard
+        title="Sponsor income"
+        value={formatInr(sponsorAvailable)}
+        highlight
+        hint="Remaining now, after withdrawals"
+      />
+      <StatCard
+        title="Matching income"
+        value={formatInr(matchingAvailable)}
+        highlight
+        hint="Remaining now, after withdrawals"
+      />
       <StatCard title="Eligible to withdraw" value={formatInr(eligible)} />
       <StatCard title="Withdrawal (approved)" value={formatInr(withdrawApproved)} />
       <StatCard title="Investments" value={formatInr(invested)} />

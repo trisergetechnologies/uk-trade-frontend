@@ -10,6 +10,7 @@ type Props = {
   trend?: number;
   trendLabel?: string;
   highlight?: boolean;
+  hint?: string;
 };
 
 export default function MLMStatCard({
@@ -19,6 +20,7 @@ export default function MLMStatCard({
   trend,
   trendLabel = "growth",
   highlight,
+  hint,
 }: Props) {
   const isPositive = trend !== undefined && trend > 0;
 
@@ -58,6 +60,9 @@ export default function MLMStatCard({
           <h2 className="text-2xl md:text-4xl font-bold text-white mt-2 break-words">
             {value}
           </h2>
+          {hint ? (
+            <p className="text-xs text-slate-400 mt-2 max-w-[16rem] leading-snug">{hint}</p>
+          ) : null}
         </div>
 
         {icon && (

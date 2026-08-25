@@ -315,6 +315,8 @@ export async function getAdminKycDocumentBlob(userCode: string, kind: KycDocumen
 export type WalletDto = {
   balance: number;
   eligibleToWithdraw: number;
+  sponsorAvailable?: number;
+  matchingAvailable?: number;
 };
 
 export async function getWalletMe(): Promise<ApiSuccess<WalletDto | null>> {

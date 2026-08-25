@@ -19,8 +19,7 @@ export function sumSponsorCreditedOnIstDate(
 }
 
 function matchingRowAmount(r: MatchingIncomeRow): number {
-  const ext = r as MatchingIncomeRow & { creditedAmount?: number };
-  const raw = ext.creditedAmount ?? r.amount;
+  const raw = r.payoutCreditedAmount ?? r.creditedAmount ?? r.amount;
   return Number(raw) || 0;
 }
 
