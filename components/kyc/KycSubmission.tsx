@@ -296,7 +296,8 @@ export default function KycSubmission() {
               Bank account for payouts
             </p>
             <p className="text-xs text-slate-500">
-              We capture your bank details now (along with KYC) so withdrawals can be processed without delay.
+              We can capture your bank details with KYC for convenience. Withdrawals do not require KYC
+              approval — admin may ask for account details separately if needed.
               You can update them later from Profile → Bank.
             </p>
             <div className="grid sm:grid-cols-2 gap-3">

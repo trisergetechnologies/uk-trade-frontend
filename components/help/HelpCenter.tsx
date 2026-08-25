@@ -22,6 +22,10 @@ const faqs = [
     a: "Community is your global lane (left/right). Side is your local branch position under a parent node. Level shows depth in the tree.",
   },
   {
+    q: "Do I need KYC to withdraw?",
+    a: "No. You can submit a withdrawal request without KYC. Bank details help faster payout; if missing, admin can ask you for account details when processing.",
+  },
+  {
     q: "Where do I see income and payout status?",
     a: "Use Income Report for trade/sponsor/matching streams and Payout Summary for approved, pending and rejected withdrawal requests.",
   },

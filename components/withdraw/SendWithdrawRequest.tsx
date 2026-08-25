@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   getMyBankAccount,
-  getMyKyc,
   getWalletMe,
   postWithdrawalRequest,
   type BankAccountDto,
@@ -33,17 +32,15 @@ export default function SendWithdrawRequest() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [kycApproved, setKycApproved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [walletRes, bankRes, kycRes] = await Promise.all([getWalletMe(), getMyBankAccount(), getMyKyc()]);
+        const [walletRes, bankRes] = await Promise.all([getWalletMe(), getMyBankAccount()]);
         if (cancelled) return;
         setWalletBalance(Number(walletRes.data?.balance) || 0);
         setEligibleToWithdraw(Number(walletRes.data?.eligibleToWithdraw) || 0);
-        setKycApproved(kycRes.data?.status === "approved");
         setBank(bankRes.data);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load withdrawal data");
@@ -63,22 +60,19 @@ export default function SendWithdrawRequest() {
     [numericAmount]
   );
   const canRequest =
-    kycApproved &&
-    bank?.isComplete &&
     Number.isFinite(numericAmount) &&
     numericAmount >= MIN_AMOUNT &&
     numericAmount <= maxAllowed;
 
   const requestHint = useMemo(() => {
-    if (!kycApproved)
-      return "Complete KYC (Aadhaar front & back, PAN, photo, plus bank details) and wait for admin approval — see Account → KYC.";
-    if (!bank?.isComplete) return "Add your bank account in Profile → Bank before requesting a withdrawal.";
     if (!amount) return `Enter an amount between ${formatInr(MIN_AMOUNT)} and ${formatInr(maxAllowed)}.`;
     if (numericAmount < MIN_AMOUNT) return `Minimum withdrawal is ${formatInr(MIN_AMOUNT)}.`;
     if (numericAmount > maxAllowed)
       return `Amount cannot exceed eligible/wallet limit (${formatInr(maxAllowed)}).`;
+    if (!bank?.isComplete)
+      return "Bank details are optional — admin can collect them later if missing.";
     return "Request follows wallet + eligibility business rules.";
-  }, [amount, bank?.isComplete, kycApproved, maxAllowed, numericAmount]);
+  }, [amount, bank?.isComplete, maxAllowed, numericAmount]);
 
   async function onSubmitRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -123,12 +117,6 @@ export default function SendWithdrawRequest() {
           Request History
         </Link>
         <Link
-          href="/userdashboard/kyc"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-amber-100 hover:bg-amber-500/20"
-        >
-          KYC
-        </Link>
-        <Link
           href="/userdashboard/profile/bank"
           className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-indigo-100 hover:bg-indigo-500/20"
         >
@@ -137,17 +125,12 @@ export default function SendWithdrawRequest() {
         </Link>
       </div>
 
-      {!kycApproved && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Withdrawals are disabled until KYC is submitted and approved. Open <strong className="text-white">Account → KYC</strong> to upload Aadhaar front & back, PAN, photo, and your bank details.
-        </div>
-      )}
-
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5">
         <h2 className="text-xl font-semibold text-white">Withdrawal Request</h2>
         <p className="text-sm text-slate-400 mt-1">
           Request amount is validated against wallet balance and eligible amount. A 5% TDS and 5% handling
-          charge (10% total) are deducted from each withdrawal; the net amount is paid to your bank after approval.
+          charge (10% total) are deducted from each withdrawal; the net amount is paid after approval.
+          KYC is not required.
         </p>
       </div>
 
@@ -184,7 +167,10 @@ export default function SendWithdrawRequest() {
           </div>
         ) : (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-2">
-            <p>No bank account on file. Add your details in Profile → Bank before requesting a withdrawal.</p>
+            <p>
+              No bank account on file. You can still submit a request — admin may ask for account details
+              before payout. Or add them now in Profile → Bank.
+            </p>
             <Link
               href="/userdashboard/profile/bank"
               className="inline-block text-xs text-amber-200 hover:text-white underline"
