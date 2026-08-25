@@ -16,8 +16,9 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Info, Loader2, Lock } from "lucide-react";
 
 const HOW_FLOW =
-  "Per BUSINESS-LOGIC: you add money via payment request, admin approves, then the balance sits in your one wallet. A purchase here does not set a new amount — you choose a fixed package (principal slot) and a plan (A–D) that sets daily %, W (withdrawal cycle length in IST calendar days), and N (max working days of trade income). " +
-  "The wallet is debited by the package price. Trade income runs on working days; sponsor pays on referred purchases when the referrer has an active package. Principal is not returned in a lump sum.";
+  "Add money via Add Fund (admin approval). Only that spendable deposit money can buy packages. " +
+  "Trade income (daily credits) is reserved for withdrawal when each cycle completes — it cannot be used to buy packages. " +
+  "Choose a fixed package amount and a plan (daily %, W cycle days, N working days). Principal is not returned as a lump sum.";
 
 export default function PackagePurchaseFlow() {
   const router = useRouter();
@@ -25,6 +26,8 @@ export default function PackagePurchaseFlow() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [spendable, setSpendable] = useState<number | null>(null);
+  const [tradeReserved, setTradeReserved] = useState(0);
   const [products, setProducts] = useState<PackageProductRow[]>([]);
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [product, setProduct] = useState<PackageProductRow | null>(null);
@@ -44,7 +47,14 @@ export default function PackagePurchaseFlow() {
         getPlans(),
       ]);
       setProducts(pRes.data || []);
-      setBalance(wRes.data?.balance ?? 0);
+      const bal = wRes.data?.balance ?? 0;
+      setBalance(bal);
+      setSpendable(
+        wRes.data?.spendableForPackages != null
+          ? Number(wRes.data.spendableForPackages)
+          : bal
+      );
+      setTradeReserved(Number(wRes.data?.tradeReservedInWallet) || 0);
       setPlans(plRes.data || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load catalog");
@@ -132,15 +142,22 @@ export default function PackagePurchaseFlow() {
               <span className="text-slate-300">Plan (A–D, rules)</span> → <span className="text-slate-300">Checkout (wallet debit)</span>.
             </p>
           </div>
-          <div className="text-sm text-slate-300 shrink-0">
-            Wallet:{" "}
-            <span className="text-white font-semibold tabular-nums">
-              {balance !== null ? formatInr(balance) : "—"}
-            </span>
-            <Link
-              href="/userdashboard/add-fund"
-              className="ml-2 text-indigo-400 hover:underline"
-            >
+          <div className="text-sm text-slate-300 shrink-0 space-y-1 text-right">
+            <div>
+              Spendable for packages:{" "}
+              <span className="text-white font-semibold tabular-nums">
+                {spendable !== null ? formatInr(spendable) : "—"}
+              </span>
+            </div>
+            {tradeReserved > 0 && (
+              <div className="text-xs text-amber-200/90">
+                Trade reserved (withdraw only): {formatInr(tradeReserved)}
+              </div>
+            )}
+            <div className="text-xs text-slate-500">
+              Wallet total: {balance !== null ? formatInr(balance) : "—"}
+            </div>
+            <Link href="/userdashboard/add-fund" className="text-indigo-400 hover:underline text-xs">
               Add fund
             </Link>
           </div>
@@ -168,7 +185,7 @@ export default function PackagePurchaseFlow() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((p) => {
               const selected = product?.id === p.id;
-              const canAfford = balance !== null && p.amount <= balance;
+              const canAfford = spendable !== null && p.amount <= spendable;
               return (
                 <Fragment key={p.id}>
                   <div
@@ -354,25 +371,29 @@ export default function PackagePurchaseFlow() {
               </span>
             </p>
             <p>
-              <span className="text-slate-500">Wallet after</span>{" "}
+              <span className="text-slate-500">Spendable after</span>{" "}
               <span className="text-slate-200">
-                {balance !== null
-                  ? formatInr(Math.max(0, balance - product.amount))
+                {spendable !== null
+                  ? formatInr(Math.max(0, spendable - product.amount))
                   : "—"}{" "}
-                (if this purchase succeeds)
+                (trade income stays reserved for withdrawal)
               </span>
             </p>
           </div>
-          {balance !== null && product.amount > balance && (
+          {spendable !== null && product.amount > spendable && (
             <p className="mt-3 text-sm text-amber-300/90">
-              Insufficient balance. <Link className="underline" href="/userdashboard/add-fund">Add fund</Link> first.
+              Insufficient spendable funds. Trade income cannot buy packages.{" "}
+              <Link className="underline" href="/userdashboard/add-fund">
+                Add fund
+              </Link>{" "}
+              first.
             </p>
           )}
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => void onConfirmPurchase()}
-              disabled={submitting || balance === null || product.amount > balance}
+              disabled={submitting || spendable === null || product.amount > spendable}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

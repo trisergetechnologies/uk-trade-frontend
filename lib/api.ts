@@ -317,6 +317,10 @@ export type WalletDto = {
   eligibleToWithdraw: number;
   sponsorAvailable?: number;
   matchingAvailable?: number;
+  /** Funds that may buy packages (excludes trade income reserved for withdrawal). */
+  spendableForPackages?: number;
+  /** Trade income still attributed to wallet balance (cannot buy packages). */
+  tradeReservedInWallet?: number;
 };
 
 export async function getWalletMe(): Promise<ApiSuccess<WalletDto | null>> {

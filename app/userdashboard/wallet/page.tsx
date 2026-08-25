@@ -50,6 +50,20 @@ export default function UserWalletPage() {
               <p className="text-3xl font-bold text-white mt-2">{formatInr(wallet?.eligibleToWithdraw ?? 0)}</p>
               <p className="text-xs text-slate-400 mt-2">Amount available for payout requests</p>
             </div>
+            <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-6">
+              <p className="text-xs uppercase tracking-wide text-sky-200/80">Spendable for packages</p>
+              <p className="text-3xl font-bold text-white mt-2">
+                {formatInr(wallet?.spendableForPackages ?? 0)}
+              </p>
+              <p className="text-xs text-slate-400 mt-2">Deposits only — trade income cannot buy packages</p>
+            </div>
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6">
+              <p className="text-xs uppercase tracking-wide text-amber-200/80">Trade reserved</p>
+              <p className="text-3xl font-bold text-white mt-2">
+                {formatInr(wallet?.tradeReservedInWallet ?? 0)}
+              </p>
+              <p className="text-xs text-slate-400 mt-2">Held for withdrawal when cycles unlock</p>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
