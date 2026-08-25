@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import StatCard from "@/components/ui/StatCard";
 import {
-  getIncomeTrade,
   getMyPackages,
   getMyWithdrawalSummary,
   getWalletMe,
@@ -13,7 +12,7 @@ import { formatInr } from "@/lib/formatInr";
 export default function TopStats() {
   const [loaded, setLoaded] = useState(false);
   const [eligible, setEligible] = useState(0);
-  const [tradeSum, setTradeSum] = useState(0);
+  const [tradeCurrentCycle, setTradeCurrentCycle] = useState(0);
   const [sponsorAvailable, setSponsorAvailable] = useState(0);
   const [matchingAvailable, setMatchingAvailable] = useState(0);
   const [withdrawApproved, setWithdrawApproved] = useState(0);
@@ -24,9 +23,8 @@ export default function TopStats() {
     let cancelled = false;
     (async () => {
       try {
-        const [walletRes, tradeRes, wdSummary, pkgRes] = await Promise.all([
+        const [walletRes, wdSummary, pkgRes] = await Promise.all([
           getWalletMe(),
-          getIncomeTrade(),
           getMyWithdrawalSummary(),
           getMyPackages(),
         ]);
@@ -34,8 +32,7 @@ export default function TopStats() {
         setEligible(Number(walletRes.data?.eligibleToWithdraw) || 0);
         setSponsorAvailable(Number(walletRes.data?.sponsorAvailable) || 0);
         setMatchingAvailable(Number(walletRes.data?.matchingAvailable) || 0);
-        const trade = (tradeRes.data || []).reduce((s, r) => s + (Number(r.amount) || 0), 0);
-        setTradeSum(trade);
+        setTradeCurrentCycle(Number(walletRes.data?.tradeCurrentCycle) || 0);
         setWithdrawApproved(Number(wdSummary.data?.approvedTotal) || 0);
         const inv = (pkgRes.data || []).reduce((s, r) => s + (Number(r.principalAmount) || 0), 0);
         setInvested(inv);
@@ -71,9 +68,9 @@ export default function TopStats() {
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <StatCard
         title="Trade income"
-        value={formatInr(tradeSum)}
+        value={formatInr(tradeCurrentCycle)}
         highlight
-        hint="Enters Eligible after each cycle completes"
+        hint="Current cycle — enters Eligible when cycle completes"
       />
       <StatCard
         title="Sponsor income"

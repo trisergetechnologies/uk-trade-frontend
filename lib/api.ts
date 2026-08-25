@@ -321,6 +321,8 @@ export type WalletDto = {
   spendableForPackages?: number;
   /** Trade income still attributed to wallet balance (cannot buy packages). */
   tradeReservedInWallet?: number;
+  /** Trade income accumulating in the current in-progress cycle (resets each cycle completion). */
+  tradeCurrentCycle?: number;
 };
 
 export async function getWalletMe(): Promise<ApiSuccess<WalletDto | null>> {
