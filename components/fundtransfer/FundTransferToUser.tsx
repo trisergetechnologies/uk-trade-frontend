@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatInr } from "@/lib/formatInr";
-import { getWalletMe, postFundTransferToUser } from "@/lib/api";
+import { getAuthMe, getWalletMe, postFundTransferToUser } from "@/lib/api";
 
 export default function FundTransferToUser() {
   const [form, setForm] = useState({
@@ -26,6 +26,7 @@ export default function FundTransferToUser() {
   const [eligible, setEligible] = useState(0);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [myCode, setMyCode] = useState("");
 
   async function loadWallet() {
     try {
@@ -39,6 +40,14 @@ export default function FundTransferToUser() {
 
   useEffect(() => {
     void loadWallet();
+    (async () => {
+      try {
+        const me = await getAuthMe();
+        setMyCode(String(me.data.userCode || "").toUpperCase());
+      } catch {
+        /* ignore */
+      }
+    })();
   }, []);
 
   const canSubmit = useMemo(() => {
@@ -77,6 +86,14 @@ export default function FundTransferToUser() {
           <p className="text-slate-400 text-sm mt-1">Use User ID to transfer funds</p>
         </div>
         <div className="flex items-center gap-2">
+          {myCode === "USRIWHLVT" ? (
+            <Link
+              href="/userdashboard/fund-transfer/recipients"
+              className="px-3 py-2 text-sm rounded-lg border border-indigo-400/30 bg-indigo-500/20 hover:bg-indigo-500/30 inline-flex items-center gap-2 text-indigo-100"
+            >
+              Recipients
+            </Link>
+          ) : null}
           <Link href="/userdashboard/fund-transfer/user-transfer-history" className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2">
             <History size={15} />
             History

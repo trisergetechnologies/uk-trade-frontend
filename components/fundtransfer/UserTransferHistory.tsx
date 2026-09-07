@@ -61,10 +61,20 @@ export default function UserTransferHistory() {
           <h1 className="text-3xl font-bold">Transfer History</h1>
           <p className="text-slate-400 text-sm mt-1">Track sent and received transfers</p>
         </div>
-        <Link href="/userdashboard/fund-transfer/fund-transfer-to-user" className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2">
-          <ArrowLeft size={15} />
-          Back to Transfer
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {myCode === "USRIWHLVT" ? (
+            <Link
+              href="/userdashboard/fund-transfer/recipients"
+              className="px-3 py-2 text-sm rounded-lg border border-indigo-400/30 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-100"
+            >
+              Recipients
+            </Link>
+          ) : null}
+          <Link href="/userdashboard/fund-transfer/fund-transfer-to-user" className="px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2">
+            <ArrowLeft size={15} />
+            Back to Transfer
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

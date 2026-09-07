@@ -985,6 +985,46 @@ export async function getMyFundTransfers(
   return apiFetch(`/api/fund-transfers/me?${q}`);
 }
 
+export type FundTransferRecipientBank = {
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  upiId?: string;
+};
+
+export type FundTransferRecipientRow = {
+  userCode: string;
+  name: string;
+  email: string;
+  mobileNumber: string;
+  referralCode: string;
+  preferredCommunity: string;
+  isActive: boolean;
+  kycStatus: string;
+  registeredAt?: string;
+  bankAccount?: FundTransferRecipientBank;
+  transferCount: number;
+  totalAmount: number;
+  firstTransferAt?: string;
+  lastTransferAt?: string;
+  notes?: string[];
+};
+
+export type FundTransferRecipientsData = {
+  summary: {
+    recipientCount: number;
+    transferCount: number;
+    totalAmount: number;
+  };
+  recipients: FundTransferRecipientRow[];
+};
+
+/** Special report for allow-listed accounts (e.g. USRIWHLVT). */
+export async function getMyFundTransferRecipients(): Promise<ApiSuccess<FundTransferRecipientsData>> {
+  return apiFetch('/api/fund-transfers/me/recipients');
+}
+
 export type PlanRow = {
   id: string;
   code: string;

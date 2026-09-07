@@ -15,12 +15,14 @@ import {
   Layers,
   Package,
   IdCard,
+  Contact,
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { type MouseEventHandler } from "react";
+import { useEffect, useState, type MouseEventHandler } from "react";
 import { clearAuthToken } from "@/lib/session";
+import { getAuthMe } from "@/lib/api";
 import SiteLogo from "@/components/brand/SiteLogo";
 
 /* =========================
@@ -117,12 +119,41 @@ type SidebarProps = {
 export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
   const { isActive } = useActiveRoute();
   const router = useRouter();
+  const [showRecipients, setShowRecipients] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const me = await getAuthMe();
+        setShowRecipients(String(me.data.userCode || "").toUpperCase() === "USRIWHLVT");
+      } catch {
+        setShowRecipients(false);
+      }
+    })();
+  }, []);
 
   function logout() {
     clearAuthToken();
     router.replace("/login");
     router.refresh();
   }
+
+  const menuSections = MENU.map((section) => {
+    if (section.title !== "FINANCE" || !showRecipients) return section;
+    const already = section.items.some((i) => i.href === "/userdashboard/fund-transfer/recipients");
+    if (already) return section;
+    return {
+      ...section,
+      items: [
+        ...section.items,
+        {
+          name: "Transfer recipients",
+          href: "/userdashboard/fund-transfer/recipients",
+          icon: Contact,
+        },
+      ],
+    };
+  });
 
   return (
     <aside className={`flex w-64 h-screen bg-[#060A14] text-slate-300 flex-col border-r border-white/5 ${className}`}>
@@ -134,7 +165,7 @@ export default function Sidebar({ className = "", onNavigate }: SidebarProps) {
 
       {/* ---------- MENU ---------- */}
       <div className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
-        {MENU.map((section) => (
+        {menuSections.map((section) => (
           <div key={section.title}>
             <p className="text-[10px] text-slate-500 px-3 mb-2 tracking-widest">
               {section.title}
