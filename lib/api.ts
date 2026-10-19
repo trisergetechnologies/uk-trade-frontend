@@ -317,7 +317,7 @@ export type WalletDto = {
   eligibleToWithdraw: number;
   sponsorAvailable?: number;
   matchingAvailable?: number;
-  /** Funds that may buy packages (excludes trade income reserved for withdrawal). */
+  /** Funds that may buy packages: leftover deposits, admin credits, incoming transfers only. */
   spendableForPackages?: number;
   /** Trade income still attributed to wallet balance (cannot buy packages). */
   tradeReservedInWallet?: number;

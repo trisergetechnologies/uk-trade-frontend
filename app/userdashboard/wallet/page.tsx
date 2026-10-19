@@ -55,7 +55,9 @@ export default function UserWalletPage() {
               <p className="text-3xl font-bold text-white mt-2">
                 {formatInr(wallet?.spendableForPackages ?? 0)}
               </p>
-              <p className="text-xs text-slate-400 mt-2">Deposits only — trade income cannot buy packages</p>
+              <p className="text-xs text-slate-400 mt-2">
+                Deposits, admin credits, and incoming transfers only — sponsor, matching, and trade cannot buy packages
+              </p>
             </div>
             <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6">
               <p className="text-xs uppercase tracking-wide text-amber-200/80">Trade reserved</p>

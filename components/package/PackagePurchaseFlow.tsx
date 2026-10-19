@@ -16,8 +16,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Info, Loader2, Lock } from "lucide-react";
 
 const HOW_FLOW =
-  "Add money via Add Fund (admin approval). Only that spendable deposit money can buy packages. " +
-  "Trade income (daily credits) is reserved for withdrawal when each cycle completes — it cannot be used to buy packages. " +
+  "Add money via Add Fund (admin approval), or receive an admin credit or incoming transfer. Only that leftover money can buy packages. " +
+  "Sponsor income, matching income, and trade income (locked or unlocked) are for withdrawal only and cannot buy packages. " +
   "Choose a fixed package amount and a plan (daily %, W cycle days, N working days). Principal is not returned as a lump sum.";
 
 export default function PackagePurchaseFlow() {
@@ -376,13 +376,13 @@ export default function PackagePurchaseFlow() {
                 {spendable !== null
                   ? formatInr(Math.max(0, spendable - product.amount))
                   : "—"}{" "}
-                (trade income stays reserved for withdrawal)
+                (sponsor, matching, and trade cannot buy packages)
               </span>
             </p>
           </div>
           {spendable !== null && product.amount > spendable && (
             <p className="mt-3 text-sm text-amber-300/90">
-              Insufficient spendable funds. Trade income cannot buy packages.{" "}
+              Insufficient spendable funds. Only deposits, admin credits, and incoming transfers can buy packages.{" "}
               <Link className="underline" href="/userdashboard/add-fund">
                 Add fund
               </Link>{" "}
