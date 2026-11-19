@@ -38,10 +38,6 @@ export default function AdminOverview() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Users size={14} />Total users</p><p className="text-xl text-white font-semibold">{t.totalUsers}</p></div>
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><WalletCards size={14} />Active users</p><p className="text-xl text-white font-semibold">{t.activeUsers}</p></div>
-        <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Clock3 size={14} />Pending funds</p><p className="text-xl text-white font-semibold">{t.pendingFundRequests}</p></div>
-        <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><BadgeIndianRupee size={14} />Pending withdrawals</p><p className="text-xl text-white font-semibold">{t.pendingWithdrawals}</p></div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Layers3 size={14} />Active plans configured</p><p className="text-xl text-white font-semibold">{t.totalPlans}</p></div>
         <div className={CARD_CLASS}><p className="text-xs text-slate-500 flex items-center gap-2"><Package size={14} />Packages configured</p><p className="text-xl text-white font-semibold">{t.totalPackages}</p></div>
       </div>
@@ -58,7 +54,6 @@ export default function AdminOverview() {
             Approved withdrawal funds
           </p>
           <p className="text-xl text-white font-semibold mt-1">{formatInr(t.approvedWithdrawalsGross || 0)}</p>
-          <p className="text-xs text-slate-400 mt-2">Net payable {formatInr(t.approvedWithdrawalsNet || 0)}</p>
         </div>
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
           <p className="text-xs text-amber-200/80 flex items-center gap-2">
@@ -66,7 +61,6 @@ export default function AdminOverview() {
             Pending withdrawal funds
           </p>
           <p className="text-xl text-white font-semibold mt-1">{formatInr(t.pendingWithdrawalsGross || 0)}</p>
-          <p className="text-xs text-slate-400 mt-2">Net if approved {formatInr(t.pendingWithdrawalsNet || 0)}</p>
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 h-[330px]">

@@ -167,12 +167,10 @@ export default function AdminWithdrawalsPage() {
         <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
           <p className="text-xs uppercase tracking-wide text-emerald-200/80">Approved withdrawal funds</p>
           <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.approved.gross)}</p>
-          <p className="text-xs text-slate-400 mt-2">Net payable {formatInr(summary.approved.netPayable)}</p>
         </div>
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
           <p className="text-xs uppercase tracking-wide text-amber-200/80">Pending withdrawal funds</p>
           <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.pending.gross)}</p>
-          <p className="text-xs text-slate-400 mt-2">Net if approved {formatInr(summary.pending.netPayable)}</p>
         </div>
       </div>
 
