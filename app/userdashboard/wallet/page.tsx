@@ -46,9 +46,22 @@ export default function UserWalletPage() {
               <p className="text-xs text-slate-400 mt-2">Funds in your wallet</p>
             </div>
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6">
-              <p className="text-xs uppercase tracking-wide text-emerald-200/80">Eligible to withdraw</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatInr(wallet?.eligibleToWithdraw ?? 0)}</p>
-              <p className="text-xs text-slate-400 mt-2">Amount available for payout requests</p>
+              <p className="text-xs uppercase tracking-wide text-emerald-200/80">Eligible for manual request</p>
+              <p className="text-3xl font-bold text-white mt-2">
+                {formatInr(
+                  Number.isFinite(Number(wallet?.manualWithdrawAvailable))
+                    ? Number(wallet?.manualWithdrawAvailable)
+                    : Math.max(
+                        0,
+                        (Number(wallet?.sponsorAvailable) || 0) +
+                          (Number(wallet?.matchingAvailable) || 0) +
+                          (Number(wallet?.bonusAvailable) || 0)
+                      )
+                )}
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                Sponsor + matching + admin bonus — trade auto-withdraws on cycle unlock
+              </p>
             </div>
             <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-6">
               <p className="text-xs uppercase tracking-wide text-sky-200/80">Spendable for packages</p>

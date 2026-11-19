@@ -317,6 +317,9 @@ export type WalletDto = {
   eligibleToWithdraw: number;
   sponsorAvailable?: number;
   matchingAvailable?: number;
+  bonusAvailable?: number;
+  /** Manual request/transfer cap: sponsor + matching + admin bonus (trade is auto on cycle unlock). */
+  manualWithdrawAvailable?: number;
   /** Funds that may buy packages: leftover deposits, admin credits, incoming transfers only. */
   spendableForPackages?: number;
   /** Trade income still attributed to wallet balance (cannot buy packages). */

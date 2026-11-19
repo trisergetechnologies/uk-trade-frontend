@@ -29,7 +29,17 @@ export default function TopStats() {
           getMyPackages(),
         ]);
         if (cancelled) return;
-        setEligible(Number(walletRes.data?.eligibleToWithdraw) || 0);
+        const manualCap = Number(walletRes.data?.manualWithdrawAvailable);
+        setEligible(
+          Number.isFinite(manualCap)
+            ? manualCap
+            : Math.max(
+                0,
+                (Number(walletRes.data?.sponsorAvailable) || 0) +
+                  (Number(walletRes.data?.matchingAvailable) || 0) +
+                  (Number(walletRes.data?.bonusAvailable) || 0)
+              )
+        );
         setSponsorAvailable(Number(walletRes.data?.sponsorAvailable) || 0);
         setMatchingAvailable(Number(walletRes.data?.matchingAvailable) || 0);
         setTradeCurrentCycle(Number(walletRes.data?.tradeCurrentCycle) || 0);
@@ -84,7 +94,11 @@ export default function TopStats() {
         highlight
         hint="Remaining now, after withdrawals"
       />
-      <StatCard title="Eligible to withdraw" value={formatInr(eligible)} />
+      <StatCard
+        title="Eligible to withdraw"
+        value={formatInr(eligible)}
+        hint="Sponsor + matching + admin bonus (trade auto-withdraws)"
+      />
       <StatCard title="Withdrawal (approved)" value={formatInr(withdrawApproved)} />
       <StatCard title="Investments" value={formatInr(invested)} />
     </div>

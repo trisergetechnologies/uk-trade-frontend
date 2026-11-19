@@ -9,6 +9,7 @@ import { formatInr } from "@/lib/formatInr";
 export default function WithdrawHome() {
   const [balance, setBalance] = useState(0);
   const [eligible, setEligible] = useState(0);
+  const [manualEligible, setManualEligible] = useState(0);
   const [bankReady, setBankReady] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +21,17 @@ export default function WithdrawHome() {
         if (cancelled) return;
         setBalance(Number(walletRes.data?.balance) || 0);
         setEligible(Number(walletRes.data?.eligibleToWithdraw) || 0);
+        const manualCap = Number(walletRes.data?.manualWithdrawAvailable);
+        setManualEligible(
+          Number.isFinite(manualCap)
+            ? manualCap
+            : Math.max(
+                0,
+                (Number(walletRes.data?.sponsorAvailable) || 0) +
+                  (Number(walletRes.data?.matchingAvailable) || 0) +
+                  (Number(walletRes.data?.bonusAvailable) || 0)
+              )
+        );
         setBankReady(Boolean(bankRes.data?.isComplete));
       } finally {
         if (!cancelled) setLoading(false);
@@ -35,8 +47,9 @@ export default function WithdrawHome() {
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-6">
         <h2 className="text-2xl font-semibold text-white">Withdraw Funds</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Trade income unlocks in one lump sum when each withdrawal cycle completes. Sponsor and matching
-          income are eligible when credited. Each withdrawal has 5% TDS and 5% handling (10% total)
+          Trade income unlocks in one lump sum when each withdrawal cycle completes and goes to auto
+          pending for admin approval — it is not available for manual request. Sponsor, matching, and
+          admin bonus can be requested manually. Each withdrawal has 5% TDS and 5% handling (10% total)
           deducted; you receive the net amount after admin approval. KYC is not required to request a
           withdrawal.
         </p>
@@ -58,13 +71,17 @@ export default function WithdrawHome() {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs text-slate-500">Wallet Balance</p>
           <p className="text-lg text-white font-semibold">{formatInr(balance)}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs text-slate-500">Eligible To Withdraw</p>
+          <p className="text-xs text-slate-500">Eligible for manual request</p>
+          <p className="text-lg text-white font-semibold">{formatInr(manualEligible)}</p>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs text-slate-500">Total eligible (accounting)</p>
           <p className="text-lg text-white font-semibold">{formatInr(eligible)}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
@@ -106,7 +123,8 @@ export default function WithdrawHome() {
 
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs text-slate-400 flex items-center gap-2">
         <Landmark className="w-4 h-4 text-indigo-400" />
-        Requests are only accepted when amount is within both wallet balance and eligible-to-withdraw limits.
+        Manual requests are limited to sponsor, matching, and admin bonus. Trade income auto-withdraws on
+        cycle unlock.
       </div>
     </section>
   );

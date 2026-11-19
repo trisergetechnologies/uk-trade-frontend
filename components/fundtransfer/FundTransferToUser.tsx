@@ -32,7 +32,17 @@ export default function FundTransferToUser() {
     try {
       setFetchingWallet(true);
       const res = await getWalletMe();
-      setEligible(res.data?.eligibleToWithdraw ?? 0);
+      const manualCap = Number(res.data?.manualWithdrawAvailable);
+      setEligible(
+        Number.isFinite(manualCap)
+          ? manualCap
+          : Math.max(
+              0,
+              (Number(res.data?.sponsorAvailable) || 0) +
+                (Number(res.data?.matchingAvailable) || 0) +
+                (Number(res.data?.bonusAvailable) || 0)
+            )
+      );
     } finally {
       setFetchingWallet(false);
     }
@@ -133,7 +143,7 @@ export default function FundTransferToUser() {
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  Available eligible amount: {formatInr(eligible)}
+                  Available for transfer (sponsor/matching/bonus): {formatInr(eligible)}
                 </p>
               </div>
 

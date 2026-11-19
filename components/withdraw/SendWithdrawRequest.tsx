@@ -26,6 +26,7 @@ const MIN_AMOUNT = 500;
 export default function SendWithdrawRequest() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [eligibleToWithdraw, setEligibleToWithdraw] = useState(0);
+  const [manualWithdrawAvailable, setManualWithdrawAvailable] = useState(0);
   const [bank, setBank] = useState<BankAccountDto | null>(null);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,17 @@ export default function SendWithdrawRequest() {
         if (cancelled) return;
         setWalletBalance(Number(walletRes.data?.balance) || 0);
         setEligibleToWithdraw(Number(walletRes.data?.eligibleToWithdraw) || 0);
+        const manualCap = Number(walletRes.data?.manualWithdrawAvailable);
+        setManualWithdrawAvailable(
+          Number.isFinite(manualCap)
+            ? manualCap
+            : Math.max(
+                0,
+                (Number(walletRes.data?.sponsorAvailable) || 0) +
+                  (Number(walletRes.data?.matchingAvailable) || 0) +
+                  (Number(walletRes.data?.bonusAvailable) || 0)
+              )
+        );
         setBank(bankRes.data);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load withdrawal data");
@@ -54,7 +66,7 @@ export default function SendWithdrawRequest() {
   }, []);
 
   const numericAmount = Number(amount || 0);
-  const maxAllowed = Math.min(walletBalance, eligibleToWithdraw);
+  const maxAllowed = Math.min(walletBalance, manualWithdrawAvailable, eligibleToWithdraw);
   const deductions = useMemo(
     () => (numericAmount > 0 ? computeWithdrawalDeductions(numericAmount) : null),
     [numericAmount]
@@ -68,10 +80,10 @@ export default function SendWithdrawRequest() {
     if (!amount) return `Enter an amount between ${formatInr(MIN_AMOUNT)} and ${formatInr(maxAllowed)}.`;
     if (numericAmount < MIN_AMOUNT) return `Minimum withdrawal is ${formatInr(MIN_AMOUNT)}.`;
     if (numericAmount > maxAllowed)
-      return `Amount cannot exceed eligible/wallet limit (${formatInr(maxAllowed)}).`;
+      return `Amount cannot exceed manual eligible/wallet limit (${formatInr(maxAllowed)}). Trade income is auto-withdrawn when each cycle completes.`;
     if (!bank?.isComplete)
       return "Bank details are optional — admin can collect them later if missing.";
-    return "Request follows wallet + eligibility business rules.";
+    return "Manual requests use sponsor, matching, and admin bonus only. Trade income auto-withdraws on cycle unlock.";
   }, [amount, bank?.isComplete, maxAllowed, numericAmount]);
 
   async function onSubmitRequest(e: React.FormEvent) {
@@ -128,20 +140,26 @@ export default function SendWithdrawRequest() {
       <div className="rounded-2xl border border-white/10 bg-[#0b0f1a]/90 p-5">
         <h2 className="text-xl font-semibold text-white">Withdrawal Request</h2>
         <p className="text-sm text-slate-400 mt-1">
-          Request amount is validated against wallet balance and eligible amount. A 5% TDS and 5% handling
-          charge (10% total) are deducted from each withdrawal; the net amount is paid after approval.
-          KYC is not required.
+          Manual requests use sponsor, matching, and admin bonus only. Trade income is sent automatically
+          for admin approval when each cycle unlocks. A 5% TDS and 5% handling charge (10% total) are
+          deducted from each withdrawal; the net amount is paid after approval. KYC is not required.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs text-slate-500">Wallet Balance</p>
           <p className="text-xl font-semibold text-white">{formatInr(walletBalance)}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs text-slate-500">Eligible To Withdraw</p>
+          <p className="text-xs text-slate-500">Eligible for manual request</p>
+          <p className="text-xl font-semibold text-white">{formatInr(manualWithdrawAvailable)}</p>
+          <p className="text-[11px] text-slate-500 mt-1">Sponsor + matching + admin bonus</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-xs text-slate-500">Total eligible (incl. trade accounting)</p>
           <p className="text-xl font-semibold text-white">{formatInr(eligibleToWithdraw)}</p>
+          <p className="text-[11px] text-slate-500 mt-1">Trade unlocks go to auto pending, not manual</p>
         </div>
       </div>
 
