@@ -165,20 +165,14 @@ export default function AdminWithdrawalsPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
-          <p className="text-xs uppercase tracking-wide text-emerald-200/80">Total approved (paid out)</p>
+          <p className="text-xs uppercase tracking-wide text-emerald-200/80">Approved withdrawal funds</p>
           <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.approved.gross)}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {summary.approved.count} request{summary.approved.count === 1 ? "" : "s"} · net payable{" "}
-            {formatInr(summary.approved.netPayable)}
-          </p>
+          <p className="text-xs text-slate-400 mt-2">Net payable {formatInr(summary.approved.netPayable)}</p>
         </div>
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-          <p className="text-xs uppercase tracking-wide text-amber-200/80">Pending approval</p>
+          <p className="text-xs uppercase tracking-wide text-amber-200/80">Pending withdrawal funds</p>
           <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.pending.gross)}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {summary.pending.count} request{summary.pending.count === 1 ? "" : "s"} · net if approved{" "}
-            {formatInr(summary.pending.netPayable)}
-          </p>
+          <p className="text-xs text-slate-400 mt-2">Net if approved {formatInr(summary.pending.netPayable)}</p>
         </div>
       </div>
 

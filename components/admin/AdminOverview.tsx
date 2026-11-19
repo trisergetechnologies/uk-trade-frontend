@@ -55,25 +55,18 @@ export default function AdminOverview() {
         <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
           <p className="text-xs text-emerald-200/80 flex items-center gap-2">
             <BadgeIndianRupee size={14} />
-            Total withdrawn (approved)
+            Approved withdrawal funds
           </p>
           <p className="text-xl text-white font-semibold mt-1">{formatInr(t.approvedWithdrawalsGross || 0)}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {t.approvedWithdrawalsCount || 0} request{(t.approvedWithdrawalsCount || 0) === 1 ? "" : "s"} · net payable{" "}
-            {formatInr(t.approvedWithdrawalsNet || 0)}
-          </p>
+          <p className="text-xs text-slate-400 mt-2">Net payable {formatInr(t.approvedWithdrawalsNet || 0)}</p>
         </div>
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
           <p className="text-xs text-amber-200/80 flex items-center gap-2">
             <Clock3 size={14} />
-            Pending withdrawals (amount)
+            Pending withdrawal funds
           </p>
           <p className="text-xl text-white font-semibold mt-1">{formatInr(t.pendingWithdrawalsGross || 0)}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {t.pendingWithdrawalsCount || t.pendingWithdrawals || 0} request
-            {(t.pendingWithdrawalsCount || t.pendingWithdrawals || 0) === 1 ? "" : "s"} · net if approved{" "}
-            {formatInr(t.pendingWithdrawalsNet || 0)}
-          </p>
+          <p className="text-xs text-slate-400 mt-2">Net if approved {formatInr(t.pendingWithdrawalsNet || 0)}</p>
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 h-[330px]">
