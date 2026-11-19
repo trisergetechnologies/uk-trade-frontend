@@ -430,6 +430,12 @@ export type AdminOverviewDto = {
     sponsorIncomeTotal: number;
     matchingIncomeTotal: number;
     totalIncome: number;
+    approvedWithdrawalsGross?: number;
+    approvedWithdrawalsNet?: number;
+    approvedWithdrawalsCount?: number;
+    pendingWithdrawalsGross?: number;
+    pendingWithdrawalsNet?: number;
+    pendingWithdrawalsCount?: number;
   };
   series: Array<{ day: string; fundRequestsAmount: number; purchaseAmount: number; approvedWithdrawalsOut: number }>;
 };
@@ -912,6 +918,23 @@ export async function getAdminWithdrawals(
   if (filters?.from?.trim()) q.set('from', filters.from.trim());
   if (filters?.to?.trim()) q.set('to', filters.to.trim());
   return apiFetch(`/api/withdrawals/admin?${q}`);
+}
+
+export type AdminWithdrawalStatusTotals = {
+  count: number;
+  gross: number;
+  netPayable: number;
+  tds: number;
+  handling: number;
+};
+
+export type AdminWithdrawalSummaryDto = {
+  pending: AdminWithdrawalStatusTotals;
+  approved: AdminWithdrawalStatusTotals;
+};
+
+export async function getAdminWithdrawalSummary(): Promise<ApiSuccess<AdminWithdrawalSummaryDto>> {
+  return apiFetch('/api/withdrawals/admin/summary');
 }
 
 export async function getMyWithdrawalSummary(): Promise<ApiSuccess<{ approvedTotal: number }>> {

@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   apiFetch,
   getAdminWithdrawals,
+  getAdminWithdrawalSummary,
+  type AdminWithdrawalSummaryDto,
   type PaginatedMeta,
   type WithdrawalRow,
   type WithdrawalStatusFilter,
@@ -13,6 +15,10 @@ import { formatInr } from "@/lib/formatInr";
 import { resolveWithdrawalDeductions } from "@/lib/withdrawalDeductions";
 
 const PAGE_SIZE = 15;
+const EMPTY_SUMMARY: AdminWithdrawalSummaryDto = {
+  pending: { count: 0, gross: 0, netPayable: 0, tds: 0, handling: 0 },
+  approved: { count: 0, gross: 0, netPayable: 0, tds: 0, handling: 0 },
+};
 
 function userLabel(row: WithdrawalRow) {
   const u = row.userId;
@@ -76,6 +82,16 @@ export default function AdminWithdrawalsPage() {
   const [reviewReason, setReviewReason] = useState("");
   const [reviewDecision, setReviewDecision] = useState<"approved" | "rejected">("approved");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [summary, setSummary] = useState<AdminWithdrawalSummaryDto>(EMPTY_SUMMARY);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      const response = await getAdminWithdrawalSummary();
+      setSummary(response.data || EMPTY_SUMMARY);
+    } catch {
+      /* list error is shown separately; keep last summary */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,6 +113,10 @@ export default function AdminWithdrawalsPage() {
   }, [load]);
 
   useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
+  useEffect(() => {
     setPage(1);
   }, [status]);
 
@@ -107,7 +127,7 @@ export default function AdminWithdrawalsPage() {
       method: "PATCH",
       body: JSON.stringify({ status: decision, reason }),
     });
-    await load();
+    await Promise.all([load(), loadSummary()]);
   };
 
   const totalPages = meta?.totalPages ?? 1;
@@ -142,6 +162,25 @@ export default function AdminWithdrawalsPage() {
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
+          <p className="text-xs uppercase tracking-wide text-emerald-200/80">Total approved (paid out)</p>
+          <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.approved.gross)}</p>
+          <p className="text-xs text-slate-400 mt-2">
+            {summary.approved.count} request{summary.approved.count === 1 ? "" : "s"} · net payable{" "}
+            {formatInr(summary.approved.netPayable)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+          <p className="text-xs uppercase tracking-wide text-amber-200/80">Pending approval</p>
+          <p className="text-2xl font-semibold text-white mt-1">{formatInr(summary.pending.gross)}</p>
+          <p className="text-xs text-slate-400 mt-2">
+            {summary.pending.count} request{summary.pending.count === 1 ? "" : "s"} · net if approved{" "}
+            {formatInr(summary.pending.netPayable)}
+          </p>
+        </div>
+      </div>
 
       <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] rounded-xl border border-white/10 bg-white/[0.03]">
         <table className="w-full min-w-[900px] text-left text-sm text-slate-300 whitespace-nowrap md:whitespace-normal">
